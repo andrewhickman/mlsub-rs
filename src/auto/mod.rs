@@ -1,0 +1,89 @@
+mod build;
+
+use crate::cons::ConstructorSet;
+use crate::flow::FlowSet;
+use crate::trans::TransitionSet;
+use crate::Polarity;
+use crate::TypeSystem;
+
+pub type StateId = usize;
+
+pub struct State<T: TypeSystem> {
+    #[cfg(debug_assertions)]
+    pub(crate) pol: Polarity,
+    pub(crate) cons: ConstructorSet<T::Constructor>,
+    pub(crate) trans: TransitionSet<T::Symbol>,
+    pub(crate) flow: FlowSet,
+}
+
+pub struct Automaton<T: TypeSystem> {
+    states: Vec<State<T>>,
+}
+
+impl<T: TypeSystem> State<T> {
+    pub(crate) fn new(_pol: Polarity) -> Self {
+        State {
+            #[cfg(debug_assertions)]
+            pol: _pol,
+            cons: ConstructorSet::default(),
+            trans: TransitionSet::default(),
+            flow: FlowSet::default(),
+        }
+    }
+}
+
+impl<T: TypeSystem> Automaton<T> {
+    pub fn new() -> Self {
+        Automaton { states: Vec::new() }
+    }
+
+    pub(crate) fn add(&mut self, state: State<T>) -> StateId {
+        let id = self.states.len();
+        self.states.push(state);
+        id
+    }
+
+    pub(crate) fn index(&self, id: StateId) -> &State<T> {
+        &self.states[id]
+    }
+
+    pub(crate) fn index_mut(&mut self, id: StateId) -> &mut State<T> {
+        &mut self.states[id]
+    }
+
+    pub(crate) fn merge_pos(&mut self, target_id: StateId, source_id: StateId) {
+        let (target, source) = index2(&mut self.states, target_id, source_id);
+
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(target.pol, Polarity::Pos);
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(source.pol, Polarity::Pos);
+
+        target.cons.join(&source.cons);
+        target.trans.union(&source.trans);
+        self.merge_flow_pos(target_id, source_id);
+    }
+
+    pub(crate) fn merge_neg(&mut self, target_id: StateId, source_id: StateId) {
+        let (target, source) = index2(&mut self.states, target_id, source_id);
+
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(target.pol, Polarity::Neg);
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(source.pol, Polarity::Neg);
+
+        target.cons.meet(&source.cons);
+        target.trans.union(&source.trans);
+        self.merge_flow_neg(target_id, source_id);
+    }
+}
+
+fn index2<T>(slice: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
+    if i < j {
+        let (l, r) = slice.split_at_mut(j);
+        (&mut l[i], &mut r[0])
+    } else {
+        let (l, r) = slice.split_at_mut(i);
+        (&mut r[0], &mut l[j])
+    }
+}
