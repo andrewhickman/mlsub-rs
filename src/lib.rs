@@ -1,15 +1,15 @@
 pub mod auto;
-pub mod cons;
-pub mod flow;
-pub mod trans;
 
+mod cons;
 mod biunify;
+
+pub use self::cons::Constructor;
 
 use std::ops;
 
 pub trait TypeSystem {
-    type Constructor: cons::Constructor;
-    type Symbol: trans::Symbol;
+    type Constructor: Constructor;
+    type Symbol: auto::Symbol;
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

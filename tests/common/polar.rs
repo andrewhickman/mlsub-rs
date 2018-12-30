@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use im::OrdMap;
 use mlsub::auto::{Automaton, StateId};
-use mlsub::{flow, Polarity};
+use mlsub::Polarity;
 
 use super::sys::*;
 

@@ -2,9 +2,8 @@ use std::borrow::Cow;
 
 use itertools::iproduct;
 
-use crate::auto::{Automaton, State, StateId};
-use crate::trans::{Symbol, Transition};
-use crate::{flow, Polarity, TypeSystem};
+use crate::auto::{Automaton, State, StateId, Symbol, Transition, flow};
+use crate::{Polarity, TypeSystem};
 
 impl<T: TypeSystem> Automaton<T> {
     /// Build an empty state, representing the bottom and top types for positive and negative

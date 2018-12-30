@@ -4,8 +4,7 @@ use std::hash::BuildHasherDefault;
 use seahash::SeaHasher;
 use itertools::iproduct;
 
-use crate::auto::{Automaton, StateId};
-use crate::trans::{Symbol, TransitionSet};
+use crate::auto::{Automaton, StateId, Symbol, TransitionSet};
 use crate::{Polarity, TypeSystem};
 
 impl<T: TypeSystem> Automaton<T> {

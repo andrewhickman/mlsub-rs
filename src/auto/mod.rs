@@ -1,8 +1,13 @@
 mod build;
+mod trans;
+mod flow;
+
+pub use self::trans::Symbol;
+
+pub(crate) use self::trans::{Transition, TransitionSet};
+pub(crate) use self::flow::FlowSet;
 
 use crate::cons::ConstructorSet;
-use crate::flow::FlowSet;
-use crate::trans::TransitionSet;
 use crate::Polarity;
 use crate::TypeSystem;
 

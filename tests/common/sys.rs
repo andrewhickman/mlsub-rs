@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::mem::{Discriminant, discriminant};
 
 use im::OrdSet;
-use mlsub::*;
+use mlsub::{self, TypeSystem, Polarity, auto};
 
 pub struct MlSub;
 
@@ -19,7 +19,7 @@ pub enum Constructor {
     Record(OrdSet<Rc<str>>),
 }
 
-impl cons::Constructor for Constructor {
+impl mlsub::Constructor for Constructor {
     type Component = Discriminant<Self>;
 
     fn component(&self) -> Self::Component {
@@ -75,7 +75,7 @@ pub enum Symbol {
     Label(Rc<str>),
 }
 
-impl trans::Symbol for Symbol {
+impl auto::Symbol for Symbol {
     fn polarity(&self) -> Polarity {
         match self {
             Symbol::Domain => Polarity::Neg,
