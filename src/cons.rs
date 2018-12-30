@@ -6,21 +6,21 @@ use seahash::SeaHasher;
 
 /// Defines elements of the type lattice.
 pub trait Constructor: PartialOrd + Clone {
-    type Key: Eq + Hash;
+    type Component: Eq + Hash;
 
-    fn key(&self) -> Self::Key;
+    fn component(&self) -> Self::Component;
 
     fn join(&mut self, other: &Self);
     fn meet(&mut self, other: &Self);
 }
 
 pub(crate) struct ConstructorSet<C: Constructor> {
-    set: HashMap<C::Key, C, BuildHasherDefault<SeaHasher>>,
+    set: HashMap<C::Component, C, BuildHasherDefault<SeaHasher>>,
 }
 
 impl<C: Constructor> ConstructorSet<C> {
     pub(crate) fn add_pos(&mut self, con: Cow<C>) {
-        match self.set.entry(con.key()) {
+        match self.set.entry(con.component()) {
             Entry::Occupied(mut entry) => entry.get_mut().join(&con),
             Entry::Vacant(entry) => {
                 entry.insert(con.into_owned());
@@ -29,7 +29,7 @@ impl<C: Constructor> ConstructorSet<C> {
     }
 
     pub(crate) fn add_neg(&mut self, con: Cow<C>) {
-        match self.set.entry(con.key()) {
+        match self.set.entry(con.component()) {
             Entry::Occupied(mut entry) => entry.get_mut().meet(&con),
             Entry::Vacant(entry) => {
                 entry.insert(con.into_owned());
@@ -62,7 +62,7 @@ impl<C: Constructor> Default for ConstructorSet<C> {
 
 impl<'a, C: Constructor> IntoIterator for &'a ConstructorSet<C> {
     type Item = &'a C;
-    type IntoIter = hash_map::Values<'a, C::Key, C>;
+    type IntoIter = hash_map::Values<'a, C::Component, C>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.set.values()

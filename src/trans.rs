@@ -13,7 +13,8 @@ pub(crate) struct Transition<S> {
     id: StateId,
 }
 
-pub(crate) struct TransitionSet<S> {
+#[derive(Debug, Clone)]
+pub(crate) struct TransitionSet<S: Symbol> {
     set: OrdSet<Transition<S>>,
 }
 
@@ -37,11 +38,7 @@ impl<S: Symbol> TransitionSet<S> {
     }
 
     pub(crate) fn union(&mut self, other: &Self) {
-        self.set = self.set.clone().union(other.set.clone());
-    }
-
-    pub(crate) fn iter(&self) -> ordset::ConsumingIter<Transition<S>> {
-        self.set.clone().into_iter()
+        self.set.extend(other.clone())
     }
 }
 
@@ -52,3 +49,13 @@ impl<S: Symbol> Default for TransitionSet<S> {
         }
     }
 }
+
+impl<'a, S: Symbol> IntoIterator for TransitionSet<S> {
+    type Item = Transition<S>;
+    type IntoIter = ordset::ConsumingIter<Transition<S>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.set.into_iter()
+    }
+}
+

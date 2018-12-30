@@ -5,20 +5,11 @@ use std::mem::{Discriminant, discriminant};
 use im::OrdSet;
 use mlsub::*;
 
-#[derive(Clone, PartialEq, PartialOrd, Eq, Ord)]
-pub enum Symbol {
-    Domain,
-    Range,
-    Label(Rc<str>),
-}
+pub struct MlSub;
 
-impl trans::Symbol for Symbol {
-    fn polarity(&self) -> Polarity {
-        match self {
-            Symbol::Domain => Polarity::Neg,
-            Symbol::Range | Symbol::Label(_) => Polarity::Pos,
-        }
-    }
+impl TypeSystem for MlSub {
+    type Constructor = Constructor;
+    type Symbol = Symbol;
 }
 
 #[derive(Clone)]
@@ -29,9 +20,9 @@ pub enum Constructor {
 }
 
 impl cons::Constructor for Constructor {
-    type Key = Discriminant<Self>;
+    type Component = Discriminant<Self>;
 
-    fn key(&self) -> Self::Key {
+    fn component(&self) -> Self::Component {
         discriminant(self)
     }
 
@@ -77,9 +68,18 @@ impl PartialEq for Constructor {
     }
 }
 
-pub struct MlSub;
+#[derive(Clone, PartialEq, PartialOrd, Eq, Ord)]
+pub enum Symbol {
+    Domain,
+    Range,
+    Label(Rc<str>),
+}
 
-impl TypeSystem for MlSub {
-    type Constructor = Constructor;
-    type Symbol = Symbol;
+impl trans::Symbol for Symbol {
+    fn polarity(&self) -> Polarity {
+        match self {
+            Symbol::Domain => Polarity::Neg,
+            Symbol::Range | Symbol::Label(_) => Polarity::Pos,
+        }
+    }
 }
