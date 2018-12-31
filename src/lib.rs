@@ -1,4 +1,5 @@
 pub mod auto;
+pub mod polar;
 
 mod cons;
 mod biunify;

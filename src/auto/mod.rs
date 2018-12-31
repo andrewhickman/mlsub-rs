@@ -2,6 +2,7 @@ mod build;
 mod trans;
 mod flow;
 
+pub use self::build::{Build, Builder};
 pub use self::trans::Symbol;
 
 pub(crate) use self::trans::{Transition, TransitionSet};
@@ -54,6 +55,13 @@ impl<T: TypeSystem> Automaton<T> {
 
     pub(crate) fn index_mut(&mut self, id: StateId) -> &mut State<T> {
         &mut self.states[id]
+    }
+
+    pub(crate) fn merge(&mut self, pol: Polarity, target: StateId, source: StateId) {
+        match pol {
+            Polarity::Pos => self.merge_pos(target, source),
+            Polarity::Neg => self.merge_neg(target, source),
+        }
     }
 
     pub(crate) fn merge_pos(&mut self, target_id: StateId, source_id: StateId) {
