@@ -1,8 +1,8 @@
 pub mod auto;
 pub mod polar;
 
-mod cons;
 mod biunify;
+mod cons;
 
 pub use self::cons::Constructor;
 

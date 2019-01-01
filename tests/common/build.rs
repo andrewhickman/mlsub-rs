@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use mlsub::{polar, Polarity};
 use mlsub::auto::{Build, Builder, StateId};
+use mlsub::{polar, Polarity};
 
-use super::{MlSub, Constructor, Symbol};
+use super::{Constructor, MlSub, Symbol};
 
 pub enum Constructed {
     Bool,
@@ -21,7 +21,7 @@ impl Build<MlSub> for Constructed {
                 builder.build_transition(pol, id, Symbol::Domain, domain);
                 builder.build_transition(pol, id, Symbol::Range, range);
                 id
-            },
+            }
             Constructed::Record(fields) => {
                 let keys = fields.keys().cloned().collect();
                 let id = builder.build_constructor(pol, Constructor::Record(keys));

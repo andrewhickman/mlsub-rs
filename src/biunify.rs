@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
 
-use seahash::SeaHasher;
 use itertools::iproduct;
+use seahash::SeaHasher;
 
 use crate::auto::{Automaton, StateId, Symbol, TransitionSet};
 use crate::{Polarity, TypeSystem};
@@ -45,7 +45,10 @@ impl<T: TypeSystem> Automaton<T> {
     }
 }
 
-fn common_groups<S>(lhs: TransitionSet<S>, rhs: TransitionSet<S>) -> impl Iterator<Item = (StateId, StateId)> 
+fn common_groups<S>(
+    lhs: TransitionSet<S>,
+    rhs: TransitionSet<S>,
+) -> impl Iterator<Item = (StateId, StateId)>
 where
     S: Symbol,
 {

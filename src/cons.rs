@@ -1,6 +1,6 @@
 use std::borrow::Cow;
-use std::hash::{BuildHasherDefault, Hash};
 use std::collections::hash_map::{self, Entry, HashMap};
+use std::hash::{BuildHasherDefault, Hash};
 
 use seahash::SeaHasher;
 

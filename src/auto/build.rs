@@ -1,12 +1,9 @@
 use std::borrow::Cow;
 use std::ops::Deref;
 
-use im::HashSet;
-use itertools::iproduct;
-
-use crate::auto::{Automaton, State, StateId, Symbol, Transition, flow};
-use crate::{Polarity, TypeSystem};
+use crate::auto::{Automaton, State, StateId, Symbol, Transition};
 use crate::polar;
+use crate::{Polarity, TypeSystem};
 
 pub trait Build<T: TypeSystem> {
     fn build(&self, builder: &mut Builder<T>, pol: Polarity) -> StateId;
@@ -36,18 +33,21 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
         at
     }
 
-    pub fn build_transition<C>(&mut self, pol: Polarity, at: StateId, symbol: T::Symbol, con: C) 
+    pub fn build_transition<C>(&mut self, pol: Polarity, at: StateId, symbol: T::Symbol, con: C)
     where
-        C: Build<T>
+        C: Build<T>,
     {
         #[cfg(debug_assertions)]
         debug_assert_eq!(self.auto.index(at).pol, pol);
 
         let id = con.build(self, pol * symbol.polarity());
-        self.auto.index_mut(at).trans.add(Transition::new(symbol, id));
+        self.auto
+            .index_mut(at)
+            .trans
+            .add(Transition::new(symbol, id));
     }
 
-    pub fn build_transitions<C, I>(&mut self, pol: Polarity, at: StateId, trans: I) 
+    pub fn build_transitions<C, I>(&mut self, pol: Polarity, at: StateId, trans: I)
     where
         C: Build<T>,
         I: IntoIterator<Item = (T::Symbol, C)>,
@@ -60,9 +60,9 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
         }
     }
 
-    pub fn build_polar<C>(&mut self, pol: Polarity, ty: &polar::Ty<C>) -> StateId  
+    pub fn build_polar<C>(&mut self, pol: Polarity, ty: &polar::Ty<C>) -> StateId
     where
-        C: Build<T>
+        C: Build<T>,
     {
         // TODO produce less garbage states
         match ty {
@@ -75,11 +75,11 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
 
                 self.auto.merge(pol, bind, expr);
                 bind
-            },
+            }
             polar::Ty::BoundVar(rx) => {
                 let ix = self.recs.len() - 1 - rx;
                 self.recs[ix]
-            },
+            }
             polar::Ty::Add(l, r) => {
                 let union = self.build_empty(pol);
 
@@ -90,13 +90,9 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
                 self.auto.merge(pol, union, r);
 
                 union
-            },
-            polar::Ty::Zero => {
-                self.build_empty(pol)
-            },
-            polar::Ty::Constructed(c) => {
-                c.build(self, pol)
             }
+            polar::Ty::Zero => self.build_empty(pol),
+            polar::Ty::Constructed(c) => c.build(self, pol),
         }
     }
 
@@ -129,18 +125,19 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
     // }
 }
 
-impl<T, D> Build<T> for D 
+impl<T, D> Build<T> for D
 where
     T: TypeSystem,
     D: Deref,
-    D::Target: Build<T> 
+    D::Target: Build<T>,
 {
     fn build(&self, builder: &mut Builder<T>, pol: Polarity) -> StateId {
         self.deref().build(builder, pol)
     }
 }
 
-impl<T, C> Build<T> for polar::Ty<C> where
+impl<T, C> Build<T> for polar::Ty<C>
+where
     T: TypeSystem,
     C: Build<T>,
 {

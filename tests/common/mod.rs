@@ -1,11 +1,11 @@
 pub mod build;
 
 use std::cmp::Ordering;
+use std::mem::{discriminant, Discriminant};
 use std::rc::Rc;
-use std::mem::{Discriminant, discriminant};
 
 use im::OrdSet;
-use mlsub::{self, TypeSystem, Polarity, auto};
+use mlsub::{self, auto, Polarity, TypeSystem};
 
 pub struct MlSub;
 

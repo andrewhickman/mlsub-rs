@@ -58,4 +58,3 @@ impl<'a, S: Symbol> IntoIterator for TransitionSet<S> {
         self.set.into_iter()
     }
 }
-
