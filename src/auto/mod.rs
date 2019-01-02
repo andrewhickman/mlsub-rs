@@ -53,6 +53,11 @@ impl<T: TypeSystem> Automaton<T> {
         &self.states[id]
     }
 
+    #[cfg(debug_assertions)]
+    pub(crate) fn is_reduced(&self) -> bool {
+        self.states.iter().all(|st| st.trans.is_reduced())
+    }
+
     pub(crate) fn index_mut(&mut self, id: StateId) -> &mut State<T> {
         &mut self.states[id]
     }
@@ -88,6 +93,18 @@ impl<T: TypeSystem> Automaton<T> {
         target.cons.meet(&source.cons);
         target.trans.union(&source.trans);
         self.merge_flow_neg(target_id, source_id);
+    }
+}
+
+impl<T: TypeSystem> Clone for State<T> {
+    fn clone(&self) -> Self {
+        State {
+            #[cfg(debug_assertions)]
+            pol: self.pol,
+            cons: self.cons.clone(),
+            trans: self.trans.clone(),
+            flow: self.flow.clone(),
+        }
     }
 }
 

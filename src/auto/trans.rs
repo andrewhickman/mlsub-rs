@@ -1,4 +1,5 @@
 use im::{ordset, OrdSet};
+use itertools::Itertools;
 
 use crate::auto::StateId;
 use crate::Polarity;
@@ -39,6 +40,15 @@ impl<S: Symbol> TransitionSet<S> {
 
     pub(crate) fn union(&mut self, other: &Self) {
         self.set.extend(other.clone())
+    }
+
+    #[cfg(debug_assertions)]
+    pub(crate) fn is_reduced(&self) -> bool {
+        self.set
+            .iter()
+            .group_by(|tr| &tr.symbol)
+            .into_iter()
+            .all(|(_, group)| group.count() == 1)
     }
 }
 

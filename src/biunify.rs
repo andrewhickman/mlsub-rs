@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
 
-use itertools::iproduct;
 use seahash::SeaHasher;
 
 use crate::auto::{Automaton, StateId, Symbol, TransitionSet};
@@ -26,7 +25,7 @@ impl<T: TypeSystem> Automaton<T> {
         debug_assert_eq!(self.index(qn).pol, Polarity::Neg);
 
         if seen.insert((qp, qn)) {
-            if !iproduct!(&self.index(qp).cons, &self.index(qn).cons).all(|(l, r)| l <= r) {
+            if !product(&self.index(qp).cons, &self.index(qn).cons).all(|(l, r)| l <= r) {
                 return Err(());
             }
             for to in self.index(qn).flow.iter() {
@@ -52,11 +51,20 @@ fn common_groups<S>(
 where
     S: Symbol,
 {
-    lhs.into_iter()
-        .flat_map(move |l| rhs.clone().into_iter().map(move |r| (l.clone(), r)))
+    product(lhs, rhs)
         .filter(|(l, r)| l.symbol() == r.symbol())
         .map(|(l, r)| match l.symbol().polarity() {
             Polarity::Pos => (l.id(), r.id()),
             Polarity::Neg => (r.id(), l.id()),
         })
+}
+
+fn product<I, J>(lhs: I, rhs: J) -> impl Iterator<Item = (I::Item, J::Item)> 
+where 
+    I: IntoIterator,
+    I::Item: Clone,
+    J: IntoIterator,
+    J: Clone,
+{
+    lhs.into_iter().flat_map(move |l| rhs.clone().into_iter().map(move |r| (l.clone(), r)))
 }

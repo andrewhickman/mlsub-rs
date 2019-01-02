@@ -1,12 +1,12 @@
 use std::borrow::Cow;
-use std::collections::hash_map::{self, Entry, HashMap};
 use std::hash::{BuildHasherDefault, Hash};
 
+use im::hashmap::{self, Entry, HashMap};
 use seahash::SeaHasher;
 
 /// Defines elements of the type lattice.
 pub trait Constructor: PartialOrd + Clone {
-    type Component: Eq + Hash;
+    type Component: Eq + Hash + Clone;
 
     fn component(&self) -> Self::Component;
 
@@ -14,6 +14,7 @@ pub trait Constructor: PartialOrd + Clone {
     fn meet(&mut self, other: &Self);
 }
 
+#[derive(Clone, Debug)]
 pub(crate) struct ConstructorSet<C: Constructor> {
     set: HashMap<C::Component, C, BuildHasherDefault<SeaHasher>>,
 }
@@ -38,14 +39,12 @@ impl<C: Constructor> ConstructorSet<C> {
     }
 
     pub(crate) fn join(&mut self, other: &Self) {
-        self.set.reserve(other.set.len());
         for con in other.set.values() {
             self.add_pos(Cow::Borrowed(con));
         }
     }
 
     pub(crate) fn meet(&mut self, other: &Self) {
-        self.set.reserve(other.set.len());
         for con in other.set.values() {
             self.add_neg(Cow::Borrowed(con));
         }
@@ -62,7 +61,7 @@ impl<C: Constructor> Default for ConstructorSet<C> {
 
 impl<'a, C: Constructor> IntoIterator for &'a ConstructorSet<C> {
     type Item = &'a C;
-    type IntoIter = hash_map::Values<'a, C::Component, C>;
+    type IntoIter = hashmap::Values<'a, C::Component, C>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.set.values()

@@ -9,7 +9,7 @@ pub struct Pair {
     pub pos: StateId,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone)]
 pub(crate) struct FlowSet {
     set: HashSet<StateId>,
 }

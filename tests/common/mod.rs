@@ -1,4 +1,6 @@
-pub mod build;
+mod build;
+
+pub use self::build::Constructed;
 
 use std::cmp::Ordering;
 use std::mem::{discriminant, Discriminant};
