@@ -8,12 +8,15 @@ use super::{Constructor, MlSub, Symbol};
 
 pub enum Constructed {
     Bool,
-    Fun(Box<polar::Ty<Constructed>>, Box<polar::Ty<Constructed>>),
+    Fun(
+        Box<polar::Ty<Constructed, Rc<str>>>,
+        Box<polar::Ty<Constructed, Rc<str>>>,
+    ),
     Record(HashMap<Rc<str>, Constructed>),
 }
 
-impl Build<MlSub> for Constructed {
-    fn build(&self, builder: &mut Builder<MlSub>, pol: Polarity) -> StateId {
+impl Build<MlSub, Rc<str>> for Constructed {
+    fn build(&self, builder: &mut Builder<MlSub, Rc<str>>, pol: Polarity) -> StateId {
         match self {
             Constructed::Bool => builder.build_constructor(pol, Constructor::Bool),
             Constructed::Fun(domain, range) => {

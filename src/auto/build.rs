@@ -1,29 +1,39 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
+use std::hash::Hash;
 use std::ops::Deref;
 
-use crate::auto::{Automaton, State, StateId, Symbol, Transition};
+use itertools::iproduct;
+
+use crate::auto::{flow, Automaton, State, StateId, Symbol, Transition};
 use crate::polar;
 use crate::{Polarity, TypeSystem};
 
-pub trait Build<T: TypeSystem> {
-    fn build(&self, builder: &mut Builder<T>, pol: Polarity) -> StateId;
+pub trait Build<T: TypeSystem, V> {
+    fn build(&self, builder: &mut Builder<T, V>, pol: Polarity) -> StateId;
 }
 
-pub struct Builder<'a, T: TypeSystem> {
-    auto: &'a mut Automaton<T>,
+pub struct Builder<T: TypeSystem, V> {
+    auto: Automaton<T>,
     recs: Vec<StateId>,
+    vars: HashMap<V, (Vec<StateId>, Vec<StateId>)>,
 }
 
 impl<T: TypeSystem> Automaton<T> {
-    pub fn builder(&mut self) -> Builder<T> {
+    pub fn builder<V: Eq + Hash>() -> Builder<T, V> {
         Builder {
-            auto: self,
+            auto: Automaton::new(),
             recs: Vec::new(),
+            vars: HashMap::new(),
         }
     }
 }
 
-impl<'a, T: TypeSystem> Builder<'a, T> {
+impl<T, V> Builder<T, V>
+where
+    T: TypeSystem,
+    V: Eq + Hash + Clone,
+{
     pub fn build_constructor(&mut self, pol: Polarity, con: T::Constructor) -> StateId {
         let at = self.build_empty(pol);
         match pol {
@@ -35,7 +45,7 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
 
     pub fn build_transition<C>(&mut self, pol: Polarity, at: StateId, symbol: T::Symbol, con: C)
     where
-        C: Build<T>,
+        C: Build<T, V>,
     {
         #[cfg(debug_assertions)]
         debug_assert_eq!(self.auto.index(at).pol, pol);
@@ -49,7 +59,7 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
 
     pub fn build_transitions<C, I>(&mut self, pol: Polarity, at: StateId, trans: I)
     where
-        C: Build<T>,
+        C: Build<T, V>,
         I: IntoIterator<Item = (T::Symbol, C)>,
     {
         #[cfg(debug_assertions)]
@@ -60,9 +70,9 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
         }
     }
 
-    pub fn build_polar<C>(&mut self, pol: Polarity, ty: &polar::Ty<C>) -> StateId
+    pub fn build_polar<C>(&mut self, pol: Polarity, ty: &polar::Ty<C, V>) -> StateId
     where
-        C: Build<T>,
+        C: Build<T, V>,
     {
         // TODO produce less garbage states
         match ty {
@@ -91,9 +101,32 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
 
                 union
             }
+            polar::Ty::UnboundVar(var) => {
+                let id = self.build_empty(pol);
+
+                let &mut (ref mut neg, ref mut pos) = self.vars.entry(var.clone()).or_default();
+                match pol {
+                    Polarity::Neg => neg.push(id),
+                    Polarity::Pos => pos.push(id),
+                };
+
+                id
+            }
             polar::Ty::Zero => self.build_empty(pol),
             polar::Ty::Constructed(c) => c.build(self, pol),
         }
+    }
+
+    pub fn finish(mut self) -> Automaton<T> {
+        debug_assert_eq!(self.recs.len(), 0);
+
+        for (_, (negs, poss)) in self.vars {
+            for (&neg, &pos) in iproduct!(&negs, &poss) {
+                self.auto.add_flow(flow::Pair { neg, pos });
+            }
+        }
+
+        self.auto
     }
 
     /// Build an empty state, representing the bottom and top types for positive and negative
@@ -125,23 +158,24 @@ impl<'a, T: TypeSystem> Builder<'a, T> {
     // }
 }
 
-impl<T, D> Build<T> for D
+impl<T, D, V> Build<T, V> for D
 where
     T: TypeSystem,
     D: Deref,
-    D::Target: Build<T>,
+    D::Target: Build<T, V>,
 {
-    fn build(&self, builder: &mut Builder<T>, pol: Polarity) -> StateId {
+    fn build(&self, builder: &mut Builder<T, V>, pol: Polarity) -> StateId {
         self.deref().build(builder, pol)
     }
 }
 
-impl<T, C> Build<T> for polar::Ty<C>
+impl<T, C, V> Build<T, V> for polar::Ty<C, V>
 where
     T: TypeSystem,
-    C: Build<T>,
+    V: Eq + Hash + Clone,
+    C: Build<T, V>,
 {
-    fn build(&self, builder: &mut Builder<T>, pol: Polarity) -> StateId {
+    fn build(&self, builder: &mut Builder<T, V>, pol: Polarity) -> StateId {
         builder.build_polar(pol, self)
     }
 }

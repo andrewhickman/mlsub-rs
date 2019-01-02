@@ -1,8 +1,8 @@
-pub enum Ty<C> {
-    // UnboundVar(V),
+pub enum Ty<C, V> {
+    UnboundVar(V),
     BoundVar(usize),
     Constructed(C),
-    Add(Box<Ty<C>>, Box<Ty<C>>),
+    Add(Box<Ty<C, V>>, Box<Ty<C, V>>),
     Zero,
-    Recursive(Box<Ty<C>>),
+    Recursive(Box<Ty<C, V>>),
 }
