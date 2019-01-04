@@ -4,6 +4,8 @@ use std::hash::{BuildHasherDefault, Hash};
 use im::hashmap::{self, Entry, HashMap};
 use seahash::SeaHasher;
 
+use crate::Polarity;
+
 /// Defines elements of the type lattice.
 pub trait Constructor: PartialOrd + Clone {
     type Component: Eq + Hash + Clone;
@@ -47,6 +49,13 @@ impl<C: Constructor> ConstructorSet<C> {
     pub(crate) fn meet(&mut self, other: &Self) {
         for con in other.set.values() {
             self.add_neg(Cow::Borrowed(con));
+        }
+    }
+
+    pub(crate) fn merge(&mut self, other: &Self, pol: Polarity) {
+        match pol {
+            Polarity::Pos => self.join(other),
+            Polarity::Neg => self.meet(other),
         }
     }
 }

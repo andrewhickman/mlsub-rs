@@ -1,5 +1,8 @@
 mod build;
+#[cfg(test)]
+mod cmp;
 mod flow;
+mod reduce;
 mod trans;
 
 pub use self::build::{Build, Builder};
@@ -14,7 +17,7 @@ use crate::TypeSystem;
 
 pub type StateId = usize;
 
-pub struct State<T: TypeSystem> {
+pub(crate) struct State<T: TypeSystem> {
     #[cfg(debug_assertions)]
     pub(crate) pol: Polarity,
     pub(crate) cons: ConstructorSet<T::Constructor>,

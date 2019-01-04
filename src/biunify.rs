@@ -59,12 +59,13 @@ where
         })
 }
 
-fn product<I, J>(lhs: I, rhs: J) -> impl Iterator<Item = (I::Item, J::Item)> 
-where 
+fn product<I, J>(lhs: I, rhs: J) -> impl Iterator<Item = (I::Item, J::Item)>
+where
     I: IntoIterator,
     I::Item: Clone,
     J: IntoIterator,
     J: Clone,
 {
-    lhs.into_iter().flat_map(move |l| rhs.clone().into_iter().map(move |r| (l.clone(), r)))
+    lhs.into_iter()
+        .flat_map(move |l| rhs.clone().into_iter().map(move |r| (l.clone(), r)))
 }

@@ -1,3 +1,5 @@
+use std::iter::FromIterator;
+
 use im::{hashset, HashSet};
 
 use crate::auto::{Automaton, StateId};
@@ -17,6 +19,19 @@ pub(crate) struct FlowSet {
 impl FlowSet {
     pub(crate) fn iter(&self) -> hashset::ConsumingIter<StateId> {
         self.set.clone().into_iter()
+    }
+
+    pub(in crate::auto) fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = StateId>,
+    {
+        FlowSet {
+            set: HashSet::from_iter(iter),
+        }
+    }
+
+    pub(in crate::auto) fn union(&mut self, other: &Self) {
+        self.set.extend(other.iter());
     }
 }
 
@@ -73,5 +88,14 @@ impl<T: TypeSystem> Automaton<T> {
         for pos in self.index(source).flow.iter() {
             self.add_flow(Pair { pos, neg });
         }
+    }
+
+    #[cfg(debug_assertions)]
+    pub(in crate::auto) fn check_flow(&self) -> bool {
+        self.states.iter().enumerate().all(|(from, st)| {
+            st.flow
+                .iter()
+                .all(|to| self.index(to).pol != st.pol && self.index(to).flow.set.contains(&from))
+        })
     }
 }

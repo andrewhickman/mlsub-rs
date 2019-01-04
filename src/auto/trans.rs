@@ -20,10 +20,6 @@ pub(crate) struct TransitionSet<S: Symbol> {
 }
 
 impl<S: Symbol> Transition<S> {
-    pub(crate) fn new(symbol: S, id: StateId) -> Self {
-        Transition { symbol, id }
-    }
-
     pub(crate) fn symbol(&self) -> S {
         self.symbol.clone()
     }
@@ -34,8 +30,8 @@ impl<S: Symbol> Transition<S> {
 }
 
 impl<S: Symbol> TransitionSet<S> {
-    pub(crate) fn add(&mut self, tr: Transition<S>) {
-        self.set.insert(tr);
+    pub(crate) fn add(&mut self, symbol: S, id: StateId) {
+        self.set.insert(Transition { symbol, id });
     }
 
     pub(crate) fn union(&mut self, other: &Self) {

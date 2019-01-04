@@ -5,7 +5,7 @@ use std::ops::Deref;
 
 use itertools::iproduct;
 
-use crate::auto::{flow, Automaton, State, StateId, Symbol, Transition};
+use crate::auto::{flow, Automaton, State, StateId, Symbol};
 use crate::polar;
 use crate::{Polarity, TypeSystem};
 
@@ -51,10 +51,7 @@ where
         debug_assert_eq!(self.auto.index(at).pol, pol);
 
         let id = con.build(self, pol * symbol.polarity());
-        self.auto
-            .index_mut(at)
-            .trans
-            .add(Transition::new(symbol, id));
+        self.auto.index_mut(at).trans.add(symbol, id);
     }
 
     pub fn build_transitions<C, I>(&mut self, pol: Polarity, at: StateId, trans: I)
