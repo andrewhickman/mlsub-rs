@@ -101,6 +101,12 @@ impl<T: TypeSystem> Automaton<T> {
     }
 }
 
+impl<T: TypeSystem> Default for Automaton<T> {
+    fn default() -> Self {
+        Automaton::new()
+    }
+}
+
 impl<T: TypeSystem> Clone for State<T> {
     fn clone(&self) -> Self {
         State {
