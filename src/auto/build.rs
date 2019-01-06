@@ -3,8 +3,6 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Deref;
 
-use itertools::iproduct;
-
 use crate::auto::{flow, Automaton, State, StateId, Symbol};
 use crate::polar;
 use crate::{Polarity, TypeSystem};

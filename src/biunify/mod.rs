@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
 

@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use mlsub::auto::{Build, Builder, StateId};
-use mlsub::{polar, Polarity};
-
 use super::{Constructor, MlSub, Symbol};
+use crate::auto::{Build, Builder, StateId};
+use crate::{polar, Polarity};
 
 #[derive(Debug)]
 pub enum Constructed {

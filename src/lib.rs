@@ -3,6 +3,8 @@ pub mod polar;
 
 mod biunify;
 mod cons;
+#[cfg(test)]
+mod tests;
 
 pub use self::cons::Constructor;
 

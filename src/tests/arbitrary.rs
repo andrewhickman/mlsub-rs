@@ -2,18 +2,19 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use lazy_static::lazy_static;
-use mlsub::auto::{Automaton, StateId};
-use mlsub::polar::Ty;
-use mlsub::Polarity;
 use proptest::collection::hash_map;
 use proptest::prelude::*;
 use proptest::prop_oneof;
 use proptest::strategy::{LazyJust, NewTree, ValueTree};
 use proptest::string::string_regex;
 use proptest::test_runner::TestRunner;
+use proptest::{proptest, proptest_helper};
 use rand::distributions::Exp1;
 
 use super::{Constructed, MlSub};
+use crate::auto::{Automaton, StateId};
+use crate::polar::Ty;
+use crate::Polarity;
 
 pub fn arb_auto_ty(pol: Polarity) -> BoxedStrategy<(Automaton<MlSub>, StateId)> {
     arb_polar_ty(pol)
@@ -117,4 +118,18 @@ impl ValueTree for BoundVarTree {
     fn complicate(&mut self) -> bool {
         false
     }
+}
+
+proptest! {
+    #[test]
+    fn polar_pos(_ in arb_polar_ty(Polarity::Pos)) {}
+
+    #[test]
+    fn polar_neg(_ in arb_polar_ty(Polarity::Neg)) {}
+
+    #[test]
+    fn auto_pos(_ in arb_auto_ty(Polarity::Pos)) {}
+
+    #[test]
+    fn auto_neg(_ in arb_auto_ty(Polarity::Neg)) {}
 }

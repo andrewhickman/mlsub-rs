@@ -9,7 +9,8 @@ use std::mem::{discriminant, Discriminant};
 use std::rc::Rc;
 
 use im::OrdSet;
-use mlsub::{self, auto, Polarity, TypeSystem};
+
+use crate::{auto, Polarity, TypeSystem};
 
 #[derive(Debug)]
 pub struct MlSub;
@@ -26,7 +27,7 @@ pub enum Constructor {
     Record(OrdSet<Rc<str>>),
 }
 
-impl mlsub::Constructor for Constructor {
+impl crate::Constructor for Constructor {
     type Component = Discriminant<Self>;
 
     fn component(&self) -> Self::Component {

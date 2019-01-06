@@ -1,5 +1,4 @@
 use im::{ordset, OrdSet};
-use itertools::Itertools;
 
 use crate::auto::StateId;
 use crate::Polarity;
@@ -40,6 +39,8 @@ impl<S: Symbol> TransitionSet<S> {
 
     #[cfg(debug_assertions)]
     pub(crate) fn is_reduced(&self) -> bool {
+        use itertools::Itertools;
+
         self.set
             .iter()
             .group_by(|tr| &tr.symbol)
