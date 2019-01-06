@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+xs 342011842 3873810024 435026424 900019233 # shrinks to lhs = Constructed(Record({})), rhs = Recursive(Constructed(Record({"a": Zero})))
+xs 352782881 4146316018 3394300223 3507725494 # shrinks to lhs = UnboundVar('d'), rhs = Recursive(Recursive(UnboundVar('d')))

@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::cmp::Ordering;
 
 use crate::auto::{Automaton, StateId};

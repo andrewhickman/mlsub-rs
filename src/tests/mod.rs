@@ -1,7 +1,7 @@
 mod arbitrary;
 mod build;
 
-pub use self::arbitrary::{arb_auto_ty, arb_polar_ty};
+pub use self::arbitrary::{arb_auto_ty, arb_polar_cons, arb_polar_ty};
 pub use self::build::Constructed;
 
 use std::cmp::Ordering;
@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use im::OrdSet;
 
-use crate::{auto, Polarity, TypeSystem};
+use crate::{auto, polar, Polarity, TypeSystem};
 
 #[derive(Debug)]
 pub struct MlSub;
@@ -19,6 +19,8 @@ impl TypeSystem for MlSub {
     type Constructor = Constructor;
     type Symbol = Symbol;
 }
+
+pub type PolarTy = polar::Ty<Constructed, char>;
 
 #[derive(Clone, Debug)]
 pub enum Constructor {

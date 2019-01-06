@@ -75,29 +75,33 @@ impl<T: TypeSystem> Automaton<T> {
     }
 
     pub(crate) fn merge_pos(&mut self, target_id: StateId, source_id: StateId) {
-        let (target, source) = index2(&mut self.states, target_id, source_id);
+        if target_id != source_id {
+            let (target, source) = index2(&mut self.states, target_id, source_id);
 
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(target.pol, Polarity::Pos);
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(source.pol, Polarity::Pos);
+            #[cfg(debug_assertions)]
+            debug_assert_eq!(target.pol, Polarity::Pos);
+            #[cfg(debug_assertions)]
+            debug_assert_eq!(source.pol, Polarity::Pos);
 
-        target.cons.join(&source.cons);
-        target.trans.union(&source.trans);
-        self.merge_flow_pos(target_id, source_id);
+            target.cons.join(&source.cons);
+            target.trans.union(&source.trans);
+            self.merge_flow_pos(target_id, source_id);
+        }
     }
 
     pub(crate) fn merge_neg(&mut self, target_id: StateId, source_id: StateId) {
-        let (target, source) = index2(&mut self.states, target_id, source_id);
+        if target_id != source_id {
+            let (target, source) = index2(&mut self.states, target_id, source_id);
 
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(target.pol, Polarity::Neg);
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(source.pol, Polarity::Neg);
+            #[cfg(debug_assertions)]
+            debug_assert_eq!(target.pol, Polarity::Neg);
+            #[cfg(debug_assertions)]
+            debug_assert_eq!(source.pol, Polarity::Neg);
 
-        target.cons.meet(&source.cons);
-        target.trans.union(&source.trans);
-        self.merge_flow_neg(target_id, source_id);
+            target.cons.meet(&source.cons);
+            target.trans.union(&source.trans);
+            self.merge_flow_neg(target_id, source_id);
+        }
     }
 }
 
@@ -120,6 +124,7 @@ impl<T: TypeSystem> Clone for State<T> {
 }
 
 fn index2<T>(slice: &mut [T], i: usize, j: usize) -> (&mut T, &mut T) {
+    debug_assert_ne!(i, j);
     if i < j {
         let (l, r) = slice.split_at_mut(j);
         (&mut l[i], &mut r[0])

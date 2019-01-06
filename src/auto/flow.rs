@@ -47,6 +47,7 @@ impl<T: TypeSystem> Automaton<T> {
         debug_assert_eq!(had_p, had_n);
     }
 
+    #[allow(dead_code)]
     pub(crate) fn remove_flow(&mut self, pair: Pair) {
         #[cfg(debug_assertions)]
         debug_assert_eq!(self.index(pair.pos).pol, Polarity::Pos);

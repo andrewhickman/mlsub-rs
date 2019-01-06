@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use lazy_static::lazy_static;
-use proptest::collection::hash_map;
+use proptest::collection::btree_map;
 use proptest::prelude::*;
 use proptest::prop_oneof;
 use proptest::strategy::{LazyJust, NewTree, ValueTree};
@@ -11,7 +11,7 @@ use proptest::test_runner::TestRunner;
 use proptest::{proptest, proptest_helper};
 use rand::distributions::Exp1;
 
-use super::{Constructed, MlSub};
+use super::{Constructed, MlSub, PolarTy};
 use crate::auto::{Automaton, StateId};
 use crate::polar::Ty;
 use crate::Polarity;
@@ -26,7 +26,7 @@ pub fn arb_auto_ty(pol: Polarity) -> BoxedStrategy<(Automaton<MlSub>, StateId)> 
         .boxed()
 }
 
-pub fn arb_polar_ty(pol: Polarity) -> BoxedStrategy<Ty<Constructed, char>> {
+pub fn arb_polar_ty(pol: Polarity) -> BoxedStrategy<PolarTy> {
     prop_oneof![
         LazyJust::new(|| Ty::Zero),
         prop::char::range('a', 'e').prop_map(Ty::UnboundVar),
@@ -34,7 +34,7 @@ pub fn arb_polar_ty(pol: Polarity) -> BoxedStrategy<Ty<Constructed, char>> {
     ]
     .prop_recursive(32, 1000, 8, |inner| {
         prop_oneof![
-            3 => arb_cons(inner.clone()).prop_map(Ty::Constructed),
+            3 => arb_polar_cons_impl(inner.clone()).prop_map(Ty::Constructed),
             1 => (inner.clone(), inner.clone()).prop_map(|(l, r)| Ty::Add(Box::new(l), Box::new(r))),
             1 => inner.prop_map(Box::new).prop_map(Ty::Recursive),
         ]
@@ -43,28 +43,25 @@ pub fn arb_polar_ty(pol: Polarity) -> BoxedStrategy<Ty<Constructed, char>> {
     .boxed()
 }
 
-fn arb_cons(ty: BoxedStrategy<Ty<Constructed, char>>) -> BoxedStrategy<Constructed> {
+pub fn arb_polar_cons(pol: Polarity) -> BoxedStrategy<Constructed> {
+    arb_polar_cons_impl(arb_polar_ty(pol))
+}
+
+fn arb_polar_cons_impl(ty: BoxedStrategy<PolarTy>) -> BoxedStrategy<Constructed> {
     lazy_static! {
-        static ref IDENT: SBoxedStrategy<Rc<str>> = string_regex("[a-z]{5}")
-            .unwrap()
-            .prop_map(Into::into)
-            .sboxed();
+        static ref IDENT: SBoxedStrategy<Rc<str>> =
+            string_regex("[a-z]").unwrap().prop_map(Into::into).sboxed();
     }
 
     prop_oneof![
         LazyJust::new(|| Constructed::Bool),
         (ty.clone(), ty.clone()).prop_map(|(d, r)| Constructed::Fun(Box::new(d), Box::new(r))),
-        hash_map(IDENT.clone(), ty.prop_map(Box::new), 0..8).prop_map(Constructed::Record)
+        btree_map(IDENT.clone(), ty.prop_map(Box::new), 0..8).prop_map(Constructed::Record)
     ]
     .boxed()
 }
 
-fn check(
-    pol: Polarity,
-    ty: &Ty<Constructed, char>,
-    recs: &mut VecDeque<Polarity>,
-    unguarded: usize,
-) -> bool {
+fn check(pol: Polarity, ty: &PolarTy, recs: &mut VecDeque<Polarity>, unguarded: usize) -> bool {
     match ty {
         Ty::BoundVar(idx) => {
             if *idx < unguarded || *idx >= recs.len() {
