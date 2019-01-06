@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub enum Ty<C, V> {
     UnboundVar(V),
     BoundVar(usize),

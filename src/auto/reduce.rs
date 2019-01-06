@@ -4,22 +4,20 @@ use std::mem::replace;
 use im::{hashset, HashSet};
 use itertools::Itertools;
 
-use crate::auto::{Automaton, FlowSet, State, StateId, Transition, TransitionSet};
-use crate::TypeSystem;
+use crate::auto::{Automaton, FlowSet, State, StateId, Symbol, Transition, TransitionSet};
+use crate::{Polarity, TypeSystem};
 
 impl<T: TypeSystem> State<T> {
-    fn merged<'a, I>(it: I) -> Self
+    fn merged<'a, I>(pol: Polarity, it: I) -> Self
     where
         T: 'a,
         I: IntoIterator<Item = &'a Self>,
     {
-        let mut it = it.into_iter();
-        let first = it.next().cloned().expect("merged zero states");
-        it.fold(first.clone(), |mut l, r| {
+        it.into_iter().fold(State::new(pol), |mut l, r| {
             #[cfg(debug_assertions)]
-            debug_assert_eq!(l.pol, r.pol);
+            debug_assert_eq!(r.pol, pol);
 
-            l.cons.merge(&r.cons, l.pol);
+            l.cons.merge(&r.cons, pol);
             l.trans.union(&r.trans);
             l.flow.union(&r.flow);
             l
@@ -28,42 +26,46 @@ impl<T: TypeSystem> State<T> {
 }
 
 impl<T: TypeSystem> Automaton<T> {
-    pub fn reduce(&mut self, nfa: &Self, nfa_start: StateId) -> StateId {
+    pub fn reduce(&mut self, pol: Polarity, nfa: &Self, nfa_start: StateId) -> StateId {
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(nfa.index(nfa_start).pol, pol);
+
         self.states.reserve(nfa.states.len());
 
         let dfa_start = self.add(nfa.index(nfa_start).clone());
         // Stack of states to be converted from nfa states to dfa states.
-        let mut stack = vec![dfa_start];
+        let mut stack = vec![(dfa_start, pol)];
 
         // Maps between sets of nfa states to corresponding dfa state.
         let mut map = BiMap::new();
         map.insert(hashset![nfa_start], dfa_start);
 
         // Walk transitions and convert to dfa ids.
-        while let Some(id) = stack.pop() {
+        while let Some((a, a_pol)) = stack.pop() {
             // Remove old nfa ids
-            let nfa_trans = replace(&mut self.index_mut(id).trans, TransitionSet::default());
+            let nfa_trans = replace(&mut self.index_mut(a).trans, TransitionSet::default());
 
             let mut dfa_trans = TransitionSet::default();
             for (symbol, ids) in &nfa_trans.into_iter().group_by(Transition::symbol) {
                 let ids = ids.map(|tr| tr.id()).collect();
 
                 dfa_trans.add(
-                    symbol,
-                    if let Some(&id) = map.ns2d.get(&ids) {
-                        id
+                    symbol.clone(),
+                    if let Some(&b) = map.ns2d.get(&ids) {
+                        b
                     } else {
-                        let state = State::merged(ids.iter().map(|&id| nfa.index(id)));
-                        let id = self.add(state);
-                        map.insert(ids, id);
-                        stack.push(id);
-                        id
+                        let b_pol = a_pol * symbol.polarity();
+                        let state = State::merged(b_pol, ids.iter().map(|&id| nfa.index(id)));
+                        let b = self.add(state);
+                        map.insert(ids, b);
+                        stack.push((b, b_pol));
+                        b
                     },
                 );
             }
 
             // Replace with dfa ids
-            replace(&mut self.index_mut(id).trans, dfa_trans);
+            replace(&mut self.index_mut(a).trans, dfa_trans);
         }
 
         // Populate flow

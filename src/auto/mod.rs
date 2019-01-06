@@ -17,6 +17,7 @@ use crate::TypeSystem;
 
 pub type StateId = usize;
 
+#[derive(Debug)]
 pub(crate) struct State<T: TypeSystem> {
     #[cfg(debug_assertions)]
     pub(crate) pol: Polarity,
@@ -25,6 +26,7 @@ pub(crate) struct State<T: TypeSystem> {
     pub(crate) flow: FlowSet,
 }
 
+#[derive(Debug)]
 pub struct Automaton<T: TypeSystem> {
     states: Vec<State<T>>,
 }

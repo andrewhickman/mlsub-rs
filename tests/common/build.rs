@@ -6,17 +6,18 @@ use mlsub::{polar, Polarity};
 
 use super::{Constructor, MlSub, Symbol};
 
+#[derive(Debug)]
 pub enum Constructed {
     Bool,
     Fun(
-        Box<polar::Ty<Constructed, Rc<str>>>,
-        Box<polar::Ty<Constructed, Rc<str>>>,
+        Box<polar::Ty<Constructed, char>>,
+        Box<polar::Ty<Constructed, char>>,
     ),
-    Record(HashMap<Rc<str>, Constructed>),
+    Record(HashMap<Rc<str>, Box<polar::Ty<Constructed, char>>>),
 }
 
-impl Build<MlSub, Rc<str>> for Constructed {
-    fn build(&self, builder: &mut Builder<MlSub, Rc<str>>, pol: Polarity) -> StateId {
+impl Build<MlSub, char> for Constructed {
+    fn build(&self, builder: &mut Builder<MlSub, char>, pol: Polarity) -> StateId {
         match self {
             Constructed::Bool => builder.build_constructor(pol, Constructor::Bool),
             Constructed::Fun(domain, range) => {

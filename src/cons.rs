@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::Debug;
 use std::hash::{BuildHasherDefault, Hash};
 
 use im::hashmap::{self, Entry, HashMap};
@@ -8,7 +9,7 @@ use crate::Polarity;
 
 /// Defines elements of the type lattice.
 pub trait Constructor: PartialOrd + Clone {
-    type Component: Eq + Hash + Clone;
+    type Component: Eq + Hash + Clone + Debug;
 
     fn component(&self) -> Self::Component;
 

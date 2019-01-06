@@ -114,7 +114,7 @@ where
         }
     }
 
-    pub fn finish(mut self) -> Automaton<T> {
+    pub fn build(mut self) -> Automaton<T> {
         debug_assert_eq!(self.recs.len(), 0);
 
         for (_, (negs, poss)) in self.vars {

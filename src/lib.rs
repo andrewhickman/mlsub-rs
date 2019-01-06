@@ -7,10 +7,11 @@ mod cons;
 pub use self::cons::Constructor;
 
 use std::ops;
+use std::fmt::Debug;
 
 pub trait TypeSystem {
-    type Constructor: Constructor;
-    type Symbol: auto::Symbol;
+    type Constructor: Constructor + Debug;
+    type Symbol: auto::Symbol + Debug;
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

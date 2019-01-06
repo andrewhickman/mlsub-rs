@@ -1,5 +1,7 @@
+mod arbitrary;
 mod build;
 
+pub use self::arbitrary::{arb_polar_ty, arb_auto_ty};
 pub use self::build::Constructed;
 
 use std::cmp::Ordering;
@@ -9,6 +11,7 @@ use std::rc::Rc;
 use im::OrdSet;
 use mlsub::{self, auto, Polarity, TypeSystem};
 
+#[derive(Debug)]
 pub struct MlSub;
 
 impl TypeSystem for MlSub {
@@ -16,7 +19,7 @@ impl TypeSystem for MlSub {
     type Symbol = Symbol;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Constructor {
     Bool,
     Fun,
@@ -72,7 +75,7 @@ impl PartialEq for Constructor {
     }
 }
 
-#[derive(Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Symbol {
     Domain,
     Range,
