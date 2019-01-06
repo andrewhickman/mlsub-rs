@@ -2,9 +2,9 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use lazy_static::lazy_static;
+use mlsub::auto::{Automaton, StateId};
 use mlsub::polar::Ty;
 use mlsub::Polarity;
-use mlsub::auto::{Automaton, StateId};
 use proptest::collection::hash_map;
 use proptest::prelude::*;
 use proptest::prop_oneof;
@@ -16,17 +16,19 @@ use rand::distributions::Exp1;
 use super::{Constructed, MlSub};
 
 pub fn arb_auto_ty(pol: Polarity) -> BoxedStrategy<(Automaton<MlSub>, StateId)> {
-    arb_polar_ty(pol).prop_map(move |ty| {
-        let mut builder = Automaton::builder();
-        let id = builder.build_polar(pol, &ty);
-        (builder.build(), id)
-    }).boxed()
+    arb_polar_ty(pol)
+        .prop_map(move |ty| {
+            let mut builder = Automaton::builder();
+            let id = builder.build_polar(pol, &ty);
+            (builder.build(), id)
+        })
+        .boxed()
 }
 
 pub fn arb_polar_ty(pol: Polarity) -> BoxedStrategy<Ty<Constructed, char>> {
     prop_oneof![
         LazyJust::new(|| Ty::Zero),
-        // prop::char::range('a', 'e').prop_map(Ty::UnboundVar),
+        prop::char::range('a', 'e').prop_map(Ty::UnboundVar),
         BoundVar.prop_map(Ty::BoundVar),
     ]
     .prop_recursive(32, 1000, 8, |inner| {

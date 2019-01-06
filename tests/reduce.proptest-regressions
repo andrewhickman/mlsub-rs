@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+xs 2151308167 1707236779 2576128606 4078881362 # shrinks to (nfa, nfa_start) = (Automaton { states: [State { pol: Pos, cons: ConstructorSet { set: {Discriminant(1): Fun} }, trans: TransitionSet { set: {Transition { symbol: Domain, id: 1 }, Transition { symbol: Range, id: 4 }} }, flow: FlowSet { set: {} } }, State { pol: Neg, cons: ConstructorSet { set: {Discriminant(1): Fun} }, trans: TransitionSet { set: {Transition { symbol: Domain, id: 2 }, Transition { symbol: Range, id: 3 }} }, flow: FlowSet { set: {} } }, State { pol: Pos, cons: ConstructorSet { set: {} }, trans: TransitionSet { set: {} }, flow: FlowSet { set: {} } }, State { pol: Neg, cons: ConstructorSet { set: {} }, trans: TransitionSet { set: {} }, flow: FlowSet { set: {5, 4} } }, State { pol: Pos, cons: ConstructorSet { set: {} }, trans: TransitionSet { set: {} }, flow: FlowSet { set: {3} } }, State { pol: Pos, cons: ConstructorSet { set: {} }, trans: TransitionSet { set: {} }, flow: FlowSet { set: {3} } }] }, 0)

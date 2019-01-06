@@ -101,10 +101,20 @@ where
             polar::Ty::UnboundVar(var) => {
                 let id = self.build_empty(pol);
 
-                let &mut (ref mut neg, ref mut pos) = self.vars.entry(var.clone()).or_default();
+                let &mut (ref mut negs, ref mut poss) = self.vars.entry(var.clone()).or_default();
                 match pol {
-                    Polarity::Neg => neg.push(id),
-                    Polarity::Pos => pos.push(id),
+                    Polarity::Neg => {
+                        negs.push(id);
+                        for &pos in &*poss {
+                            self.auto.add_flow(flow::Pair { pos, neg: id });
+                        }
+                    }
+                    Polarity::Pos => {
+                        poss.push(id);
+                        for &neg in &*negs {
+                            self.auto.add_flow(flow::Pair { neg, pos: id });
+                        }
+                    }
                 };
 
                 id
@@ -114,15 +124,8 @@ where
         }
     }
 
-    pub fn build(mut self) -> Automaton<T> {
+    pub fn build(self) -> Automaton<T> {
         debug_assert_eq!(self.recs.len(), 0);
-
-        for (_, (negs, poss)) in self.vars {
-            for (&neg, &pos) in iproduct!(&negs, &poss) {
-                self.auto.add_flow(flow::Pair { neg, pos });
-            }
-        }
-
         self.auto
     }
 

@@ -1,7 +1,7 @@
 mod arbitrary;
 mod build;
 
-pub use self::arbitrary::{arb_polar_ty, arb_auto_ty};
+pub use self::arbitrary::{arb_auto_ty, arb_polar_ty};
 pub use self::build::Constructed;
 
 use std::cmp::Ordering;

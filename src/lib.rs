@@ -6,8 +6,8 @@ mod cons;
 
 pub use self::cons::Constructor;
 
-use std::ops;
 use std::fmt::Debug;
+use std::ops;
 
 pub trait TypeSystem {
     type Constructor: Constructor + Debug;

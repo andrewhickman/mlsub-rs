@@ -73,7 +73,12 @@ impl<T: TypeSystem> Automaton<T> {
             // Remove old nfa ids
             let nfa_flow = replace(&mut self.index_mut(a).flow, FlowSet::default());
 
-            let dfa_flow = FlowSet::from_iter(nfa_flow.iter().flat_map(|b| map.n2ds[&b].clone()));
+            let dfa_flow = FlowSet::from_iter(
+                nfa_flow
+                    .iter()
+                    .flat_map(|b| map.n2ds.get(&b).cloned())
+                    .flatten(),
+            );
 
             // Replace with dfa ids
             replace(&mut self.index_mut(a).flow, dfa_flow);

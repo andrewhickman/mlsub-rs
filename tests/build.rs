@@ -3,7 +3,7 @@ mod common;
 use mlsub::Polarity;
 use proptest::{proptest, proptest_helper};
 
-use crate::common::{arb_polar_ty, arb_auto_ty};
+use crate::common::{arb_auto_ty, arb_polar_ty};
 
 proptest! {
     #[test]
