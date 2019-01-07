@@ -1,15 +1,16 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
-use super::{Constructor, MlSub, PolarTy, Symbol};
+use super::{Constructor, MlSub, Symbol};
 use crate::auto::{Build, Builder, StateId};
+use crate::polar::Ty;
 use crate::Polarity;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Constructed {
     Bool,
-    Fun(Box<PolarTy>, Box<PolarTy>),
-    Record(BTreeMap<Rc<str>, Box<PolarTy>>),
+    Fun(Box<Ty<Constructed, char>>, Box<Ty<Constructed, char>>),
+    Record(BTreeMap<Rc<str>, Box<Ty<Constructed, char>>>),
 }
 
 impl Build<MlSub, char> for Constructed {

@@ -11,7 +11,7 @@ use proptest::test_runner::TestRunner;
 use proptest::{proptest, proptest_helper};
 use rand::distributions::Exp1;
 
-use super::{Constructed, MlSub, PolarTy};
+use super::{Constructed, MlSub};
 use crate::auto::{Automaton, StateId};
 use crate::polar::Ty;
 use crate::Polarity;
@@ -26,7 +26,7 @@ pub fn arb_auto_ty(pol: Polarity) -> BoxedStrategy<(Automaton<MlSub>, StateId)> 
         .boxed()
 }
 
-pub fn arb_polar_ty(pol: Polarity) -> BoxedStrategy<PolarTy> {
+pub fn arb_polar_ty(pol: Polarity) -> BoxedStrategy<Ty<Constructed, char>> {
     prop_oneof![
         LazyJust::new(|| Ty::Zero),
         prop::char::range('a', 'e').prop_map(Ty::UnboundVar),
@@ -34,7 +34,7 @@ pub fn arb_polar_ty(pol: Polarity) -> BoxedStrategy<PolarTy> {
     ]
     .prop_recursive(32, 1000, 8, |inner| {
         prop_oneof![
-            3 => arb_polar_cons_impl(inner.clone()).prop_map(Ty::Constructed),
+            3 => arb_polar_cons(inner.clone()).prop_map(Ty::Constructed),
             1 => (inner.clone(), inner.clone()).prop_map(|(l, r)| Ty::Add(Box::new(l), Box::new(r))),
             1 => inner.prop_map(Box::new).prop_map(Ty::Recursive),
         ]
@@ -43,11 +43,7 @@ pub fn arb_polar_ty(pol: Polarity) -> BoxedStrategy<PolarTy> {
     .boxed()
 }
 
-pub fn arb_polar_cons(pol: Polarity) -> BoxedStrategy<Constructed> {
-    arb_polar_cons_impl(arb_polar_ty(pol))
-}
-
-fn arb_polar_cons_impl(ty: BoxedStrategy<PolarTy>) -> BoxedStrategy<Constructed> {
+fn arb_polar_cons(ty: BoxedStrategy<Ty<Constructed, char>>) -> BoxedStrategy<Constructed> {
     lazy_static! {
         static ref IDENT: SBoxedStrategy<Rc<str>> =
             string_regex("[a-z]").unwrap().prop_map(Into::into).sboxed();
@@ -61,7 +57,12 @@ fn arb_polar_cons_impl(ty: BoxedStrategy<PolarTy>) -> BoxedStrategy<Constructed>
     .boxed()
 }
 
-fn check(pol: Polarity, ty: &PolarTy, recs: &mut VecDeque<Polarity>, unguarded: usize) -> bool {
+fn check(
+    pol: Polarity,
+    ty: &Ty<Constructed, char>,
+    recs: &mut VecDeque<Polarity>,
+    unguarded: usize,
+) -> bool {
     match ty {
         Ty::BoundVar(idx) => {
             if *idx < unguarded || *idx >= recs.len() {
