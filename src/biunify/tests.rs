@@ -114,4 +114,18 @@ proptest! {
         let mut auto = builder.build();
         assert_eq!(auto.biunify(lhs_id, rhs_id), biunify_reference(vec![Constraint(lhs, rhs)]))
     }
+
+    #[test]
+    fn biunify_reduced(lhs in arb_polar_ty(Polarity::Pos), rhs in arb_polar_ty(Polarity::Neg)) {
+        let mut builder = Automaton::builder();
+
+        let lhs_id = builder.build_polar(Polarity::Pos, &lhs);
+        let rhs_id = builder.build_polar(Polarity::Neg, &rhs);
+        let auto = builder.build();
+
+        let mut reduced = Automaton::new();
+        let dfa_ids = reduced.reduce(&auto, [(lhs_id, Polarity::Pos), (rhs_id, Polarity::Neg)].iter().cloned());
+
+        assert_eq!(reduced.biunify(dfa_ids.start, dfa_ids.start + 1), biunify_reference(vec![Constraint(lhs, rhs)]))
+    }
 }

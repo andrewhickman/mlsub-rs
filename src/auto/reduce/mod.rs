@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests;
 
+use core::ops::Range;
 use std::collections::HashMap;
 use std::mem::replace;
 
@@ -29,19 +30,31 @@ impl<T: TypeSystem> State<T> {
 }
 
 impl<T: TypeSystem> Automaton<T> {
-    pub fn reduce(&mut self, pol: Polarity, nfa: &Self, nfa_start: StateId) -> StateId {
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(nfa.index(nfa_start).pol, pol);
-
+    pub fn reduce<I>(&mut self, nfa: &Self, nfa_ids: I) -> Range<StateId>
+    where
+        I: IntoIterator<Item = (StateId, Polarity)>,
+    {
         self.states.reserve(nfa.states.len());
 
-        let dfa_start = self.add(nfa.index(nfa_start).clone());
-        // Stack of states to be converted from nfa states to dfa states.
-        let mut stack = vec![(dfa_start, pol)];
-
         // Maps between sets of nfa states to corresponding dfa state.
-        let mut map = BiMap::new();
-        map.insert(hashset![nfa_start], dfa_start);
+        let mut map = BiMap::with_capacity(nfa.states.len());
+
+        let start = self.states.len();
+        // Stack of states to be converted from nfa states to dfa states.
+        let mut stack: Vec<_> = nfa_ids
+            .into_iter()
+            .map(|(nfa_id, pol)| {
+                #[cfg(debug_assertions)]
+                debug_assert_eq!(nfa.index(nfa_id).pol, pol);
+
+                let dfa_id = self.add(nfa.index(nfa_id).clone());
+                map.insert(hashset![nfa_id], dfa_id);
+                (dfa_id, pol)
+            })
+            .collect();
+        let end = self.states.len();
+
+        debug_assert!(stack.iter().map(|&(id, _)| id).eq(start..end));
 
         // Walk transitions and convert to dfa ids.
         while let Some((a, a_pol)) = stack.pop() {
@@ -92,7 +105,7 @@ impl<T: TypeSystem> Automaton<T> {
         #[cfg(debug_assertions)]
         debug_assert!(self.is_reduced());
 
-        dfa_start
+        start..end
     }
 }
 
@@ -104,10 +117,10 @@ struct BiMap {
 }
 
 impl BiMap {
-    fn new() -> Self {
+    fn with_capacity(cap: usize) -> Self {
         BiMap {
-            ns2d: HashMap::new(),
-            n2ds: HashMap::new(),
+            ns2d: HashMap::with_capacity(cap),
+            n2ds: HashMap::with_capacity(cap),
         }
     }
 
