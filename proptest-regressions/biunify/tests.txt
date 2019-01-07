@@ -8,3 +8,4 @@ xs 342011842 3873810024 435026424 900019233 # shrinks to lhs = Constructed(Recor
 xs 352782881 4146316018 3394300223 3507725494 # shrinks to lhs = UnboundVar('d'), rhs = Recursive(Recursive(UnboundVar('d')))
 xs 3435800330 1608550742 3906956162 505417845 # shrinks to lhs = Recursive(Recursive(Constructed(Record({"i": UnboundVar('e')})))), rhs = Recursive(Add(UnboundVar('e'), UnboundVar('a')))
 xs 4141826729 4059919427 2120281409 3821143027 # shrinks to lhs = Recursive(Constructed(Fun(Zero, Add(Zero, BoundVar(0))))), rhs = Constructed(Fun(Zero, Constructed(Record({}))))
+xs 2695311827 2495169969 3344041167 1629779448 # shrinks to lhs = Recursive(Constructed(Fun(Zero, Add(Zero, BoundVar(0))))), rhs = Constructed(Fun(Zero, Constructed(Bool)))
