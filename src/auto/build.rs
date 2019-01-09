@@ -41,28 +41,20 @@ where
         at
     }
 
-    pub fn build_transition<C>(&mut self, pol: Polarity, at: StateId, symbol: T::Symbol, con: C)
-    where
+    pub fn build_transition<C>(
+        &mut self,
+        pol: Polarity,
+        at: StateId,
+        symbol: T::Symbol,
+        ty: polar::Ty<C, V>,
+    ) where
         C: Build<T, V>,
     {
         #[cfg(debug_assertions)]
         debug_assert_eq!(self.auto.index(at).pol, pol);
 
-        let id = con.build(self, pol * symbol.polarity());
+        let id = ty.build(self, pol * symbol.polarity());
         self.auto.index_mut(at).trans.add(symbol, id);
-    }
-
-    pub fn build_transitions<C, I>(&mut self, pol: Polarity, at: StateId, trans: I)
-    where
-        C: Build<T, V>,
-        I: IntoIterator<Item = (T::Symbol, C)>,
-    {
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(self.auto.index(at).pol, pol);
-
-        for (symbol, con) in trans {
-            self.build_transition(pol, at, symbol, con);
-        }
     }
 
     pub fn build_polar<C>(&mut self, pol: Polarity, ty: &polar::Ty<C, V>) -> StateId
