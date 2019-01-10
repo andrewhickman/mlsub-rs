@@ -1,19 +1,23 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::ops::Deref;
+
+use im::Vector;
 
 use crate::auto::{flow, Automaton, State, StateId, Symbol};
 use crate::polar;
 use crate::{Polarity, TypeSystem};
 
-pub trait Build<T: TypeSystem, V> {
-    fn build(&self, builder: &mut Builder<T, V>, pol: Polarity) -> StateId;
+pub trait Build<T: TypeSystem, V>: Sized {
+    fn constructor(&self) -> T::Constructor;
+    fn visit_transitions<'a, F>(&'a self, f: F)
+    where
+        V: 'a,
+        F: FnMut(T::Symbol, &'a polar::Ty<Self, V>);
 }
 
 pub struct Builder<T: TypeSystem, V> {
     auto: Automaton<T>,
-    recs: Vec<StateId>,
     vars: HashMap<V, (Vec<StateId>, Vec<StateId>)>,
 }
 
@@ -21,7 +25,6 @@ impl<T: TypeSystem> Automaton<T> {
     pub fn builder<V: Eq + Hash>() -> Builder<T, V> {
         Builder {
             auto: Automaton::new(),
-            recs: Vec::new(),
             vars: HashMap::new(),
         }
     }
@@ -32,90 +35,107 @@ where
     T: TypeSystem,
     V: Eq + Hash + Clone,
 {
-    pub fn build_constructor(&mut self, pol: Polarity, con: T::Constructor) -> StateId {
-        let at = self.build_empty(pol);
-        match pol {
-            Polarity::Pos => self.auto.index_mut(at).cons.add_pos(Cow::Owned(con)),
-            Polarity::Neg => self.auto.index_mut(at).cons.add_neg(Cow::Owned(con)),
-        }
-        at
-    }
-
-    pub fn build_transition<C>(
-        &mut self,
-        pol: Polarity,
-        at: StateId,
-        symbol: T::Symbol,
-        ty: polar::Ty<C, V>,
-    ) where
-        C: Build<T, V>,
-    {
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(self.auto.index(at).pol, pol);
-
-        let id = ty.build(self, pol * symbol.polarity());
-        self.auto.index_mut(at).trans.add(symbol, id);
-    }
-
     pub fn build_polar<C>(&mut self, pol: Polarity, ty: &polar::Ty<C, V>) -> StateId
     where
         C: Build<T, V>,
     {
+        let at = self.build_empty(pol);
+        let mut stack = vec![(pol, at, ty, Vector::new())];
+        while let Some((pol, at, ty, mut recs)) = stack.pop() {
+            self.build_polar_closure_at(pol, at, ty, &mut stack, &mut recs);
+        }
+        at
+    }
+
+    fn build_polar_closure_at<'a, C>(
+        &mut self,
+        pol: Polarity,
+        at: StateId,
+        ty: &'a polar::Ty<C, V>,
+        stack: &mut Vec<(Polarity, StateId, &'a polar::Ty<C, V>, Vector<StateId>)>,
+        recs: &mut Vector<StateId>,
+    ) where
+        C: Build<T, V>,
+    {
         // TODO produce less garbage states
+
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(self.auto.index(at).pol, pol);
+
         match ty {
             polar::Ty::Recursive(inner) => {
-                let bind = self.build_empty(pol);
+                recs.push_front(at);
+                let expr = self.build_polar_closure(pol, false, inner, stack, recs);
+                recs.pop_front();
 
-                self.recs.push(bind);
-                let expr = self.build_polar(pol, inner);
-                self.recs.pop();
-
-                self.auto.merge(pol, bind, expr);
-                bind
+                self.auto.merge(pol, at, expr);
             }
-            polar::Ty::BoundVar(rx) => {
-                let ix = self.recs.len() - 1 - rx;
-                self.recs[ix]
-            }
+            polar::Ty::BoundVar(_) => unreachable!(),
             polar::Ty::Add(l, r) => {
-                let union = self.build_empty(pol);
+                let l = self.build_polar_closure(pol, false, l, stack, recs);
+                self.auto.merge(pol, at, l);
 
-                let l = self.build_polar(pol, l);
-                self.auto.merge(pol, union, l);
-
-                let r = self.build_polar(pol, r);
-                self.auto.merge(pol, union, r);
-
-                union
+                let r = self.build_polar_closure(pol, false, r, stack, recs);
+                self.auto.merge(pol, at, r);
             }
             polar::Ty::UnboundVar(var) => {
-                let id = self.build_empty(pol);
-
                 let &mut (ref mut negs, ref mut poss) = self.vars.entry(var.clone()).or_default();
                 match pol {
                     Polarity::Neg => {
-                        negs.push(id);
+                        negs.push(at);
                         for &pos in &*poss {
-                            self.auto.add_flow(flow::Pair { pos, neg: id });
+                            self.auto.add_flow(flow::Pair { pos, neg: at });
                         }
                     }
                     Polarity::Pos => {
-                        poss.push(id);
+                        poss.push(at);
                         for &neg in &*negs {
-                            self.auto.add_flow(flow::Pair { neg, pos: id });
+                            self.auto.add_flow(flow::Pair { neg, pos: at });
                         }
                     }
                 };
-
-                id
             }
-            polar::Ty::Zero => self.build_empty(pol),
-            polar::Ty::Constructed(c) => c.build(self, pol),
+            polar::Ty::Zero => (),
+            polar::Ty::Constructed(c) => {
+                let con = Cow::Owned(c.constructor());
+                match pol {
+                    Polarity::Pos => self.auto.index_mut(at).cons.add_pos(con),
+                    Polarity::Neg => self.auto.index_mut(at).cons.add_neg(con),
+                };
+
+                c.visit_transitions(|symbol, ty| {
+                    let id = self.build_polar_closure(pol * symbol.polarity(), true, ty, stack, recs);
+                    self.auto.index_mut(at).trans.add(symbol, id);
+                });
+            }
+        }
+    }
+
+    fn build_polar_closure<'a, C>(
+        &mut self,
+        pol: Polarity,
+        out: bool,
+        ty: &'a polar::Ty<C, V>,
+        stack: &mut Vec<(Polarity, StateId, &'a polar::Ty<C, V>, Vector<StateId>)>,
+        recs: &mut Vector<StateId>,
+    ) -> StateId
+    where
+        C: Build<T, V>,
+    {
+        if let polar::Ty::BoundVar(idx) = *ty {
+            recs[idx]
+        } else {
+            let id = self.build_empty(pol);
+            if out {
+                stack.push((pol, id, ty, recs.clone()));
+            } else {
+                self.build_polar_closure_at(pol, id, ty, stack, recs);
+            }
+            id
         }
     }
 
     pub fn build(self) -> Automaton<T> {
-        debug_assert_eq!(self.recs.len(), 0);
         self.auto
     }
 
@@ -146,26 +166,4 @@ where
     //     self.add_flow(pair);
     //     pair
     // }
-}
-
-impl<T, D, V> Build<T, V> for D
-where
-    T: TypeSystem,
-    D: Deref,
-    D::Target: Build<T, V>,
-{
-    fn build(&self, builder: &mut Builder<T, V>, pol: Polarity) -> StateId {
-        self.deref().build(builder, pol)
-    }
-}
-
-impl<T, C, V> Build<T, V> for polar::Ty<C, V>
-where
-    T: TypeSystem,
-    V: Eq + Hash + Clone,
-    C: Build<T, V>,
-{
-    fn build(&self, builder: &mut Builder<T, V>, pol: Polarity) -> StateId {
-        builder.build_polar(pol, self)
-    }
 }
