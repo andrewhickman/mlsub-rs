@@ -10,9 +10,11 @@ readme = "README.md"
 edition = "2018"
 
 [dependencies]
-im = "12.2.0"
 seahash = "~3"
 itertools = "0.8.0"
+
+[dependencies.im]
+git = "https://github.com/andrewhickman/im-rs"
 
 [dev-dependencies]
 iter-set = "0.2.0"
