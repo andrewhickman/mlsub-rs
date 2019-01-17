@@ -12,6 +12,9 @@ pub struct Ty<'a, T: TypeSystem> {
 
 impl<'a, T: TypeSystem> PartialOrd for Ty<'a, T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        assert!(self.auto.is_reduced());
+        assert!(other.auto.is_reduced());
+
         unimplemented!()
     }
 }
