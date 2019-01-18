@@ -1,4 +1,8 @@
 #[cfg(test)]
+mod bisubst;
+#[cfg(test)]
+mod reference;
+#[cfg(test)]
 mod tests;
 
 use std::collections::HashSet;
@@ -11,7 +15,9 @@ use crate::{Polarity, TypeSystem};
 
 impl<T: TypeSystem> Automaton<T> {
     /// Solves a constraint t⁺ ≤ t⁻ where t⁺ and t⁻ are represented by the states `qp` and `qn`.
-    pub fn biunify(&mut self, qp: StateId, qn: StateId) -> bool {
+    pub fn biunify(&mut self, qp: StateId, qn: StateId) -> bool where Self: std::fmt::Debug {
+        println!("--------------");
+
         let mut seen = HashSet::with_capacity_and_hasher(20, Default::default());
         self.biunify_impl(&mut seen, qp, qn).is_ok()
     }
@@ -21,7 +27,10 @@ impl<T: TypeSystem> Automaton<T> {
         seen: &mut HashSet<(StateId, StateId), BuildHasherDefault<SeaHasher>>,
         qp: StateId,
         qn: StateId,
-    ) -> Result<(), ()> {
+    ) -> Result<(), ()>  where Self: std::fmt::Debug {
+        println!("({} <= {})", qp, qn);
+        println!("{:?}", self);
+
         #[cfg(debug_assertions)]
         debug_assert_eq!(self.index(qp).pol, Polarity::Pos);
         #[cfg(debug_assertions)]

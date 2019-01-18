@@ -16,7 +16,7 @@ pub trait TypeSystem {
     type Symbol: auto::Symbol + Debug;
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Polarity {
     Neg = -1,
     Pos = 1,

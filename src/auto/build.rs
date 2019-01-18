@@ -28,6 +28,13 @@ impl<T: TypeSystem> Automaton<T> {
             vars: HashMap::new(),
         }
     }
+
+    fn merge(&mut self, pol: Polarity, target: StateId, source: StateId) {
+        match pol {
+            Polarity::Pos => self.merge_pos(target, source),
+            Polarity::Neg => self.merge_neg(target, source),
+        }
+    }
 }
 
 impl<T, V> Builder<T, V>
@@ -104,7 +111,8 @@ where
                 };
 
                 c.visit_transitions(|symbol, ty| {
-                    let id = self.build_polar_closure(pol * symbol.polarity(), true, ty, stack, recs);
+                    let id =
+                        self.build_polar_closure(pol * symbol.polarity(), true, ty, stack, recs);
                     self.auto.index_mut(at).trans.add(symbol, id);
                 });
             }
