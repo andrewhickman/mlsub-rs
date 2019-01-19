@@ -18,7 +18,7 @@ pub trait Build<T: TypeSystem, V>: Sized {
 
 pub struct Builder<T: TypeSystem, V> {
     auto: Automaton<T>,
-    vars: HashMap<V, (Vec<StateId>, Vec<StateId>)>,
+    vars: HashMap<StateId, (Polarity, Vec<V>)>,
 }
 
 impl<T: TypeSystem> Automaton<T> {
@@ -26,13 +26,6 @@ impl<T: TypeSystem> Automaton<T> {
         Builder {
             auto: Automaton::new(),
             vars: HashMap::new(),
-        }
-    }
-
-    fn merge(&mut self, pol: Polarity, target: StateId, source: StateId) {
-        match pol {
-            Polarity::Pos => self.merge_pos(target, source),
-            Polarity::Neg => self.merge_neg(target, source),
         }
     }
 }
@@ -75,32 +68,18 @@ where
                 let expr = self.build_polar_closure(pol, false, inner, stack, recs);
                 recs.pop_front();
 
-                self.auto.merge(pol, at, expr);
+                self.merge(pol, at, expr);
             }
             polar::Ty::BoundVar(_) => unreachable!(),
             polar::Ty::Add(l, r) => {
                 let l = self.build_polar_closure(pol, false, l, stack, recs);
-                self.auto.merge(pol, at, l);
+                self.merge(pol, at, l);
 
                 let r = self.build_polar_closure(pol, false, r, stack, recs);
-                self.auto.merge(pol, at, r);
+                self.merge(pol, at, r);
             }
             polar::Ty::UnboundVar(var) => {
-                let &mut (ref mut negs, ref mut poss) = self.vars.entry(var.clone()).or_default();
-                match pol {
-                    Polarity::Neg => {
-                        negs.push(at);
-                        for &pos in &*poss {
-                            self.auto.add_flow(flow::Pair { pos, neg: at });
-                        }
-                    }
-                    Polarity::Pos => {
-                        poss.push(at);
-                        for &neg in &*negs {
-                            self.auto.add_flow(flow::Pair { neg, pos: at });
-                        }
-                    }
-                };
+                self.vars.insert(at, (pol, vec![var.clone()]));
             }
             polar::Ty::Zero => (),
             polar::Ty::Constructed(c) => {
@@ -143,7 +122,29 @@ where
         }
     }
 
-    pub fn build(self) -> Automaton<T> {
+    pub fn build(mut self) -> Automaton<T> {
+        let mut map: HashMap<V, (Vec<_>, Vec<_>)> = HashMap::new();
+
+        for (id, (pol, vars)) in self.vars {
+            for var in vars {
+                let (negs, poss) = map.entry(var.clone()).or_default();
+                match pol {
+                    Polarity::Pos => {
+                        poss.push(id);
+                        for &mut neg in negs {
+                            self.auto.add_flow(flow::Pair { neg, pos: id });
+                        }
+                    }
+                    Polarity::Neg => {
+                        negs.push(id);
+                        for &mut pos in poss {
+                            self.auto.add_flow(flow::Pair { pos, neg: id });
+                        }
+                    }
+                }
+            }
+        }
+
         self.auto
     }
 
@@ -151,6 +152,21 @@ where
     /// polarities respectively.
     pub(crate) fn build_empty(&mut self, pol: Polarity) -> StateId {
         self.auto.add(State::new(pol))
+    }
+
+    fn merge(&mut self, pol: Polarity, target: StateId, source: StateId) {
+        match pol {
+            Polarity::Pos => self.auto.merge_pos(target, source),
+            Polarity::Neg => self.auto.merge_neg(target, source),
+        }
+
+        if let Some((_, vars)) = self.vars.get(&source).cloned() {
+            self.vars
+                .entry(target)
+                .or_insert((pol, vec![]))
+                .1
+                .extend(vars);
+        }
     }
 
     // pub(crate) fn build_flow<N, P>(&mut self, neg: N, pos: P)
