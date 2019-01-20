@@ -24,3 +24,5 @@ impl<'a, T: TypeSystem> PartialEq for Ty<'a, T> {
         self.partial_cmp(other) == Some(Ordering::Equal)
     }
 }
+
+impl<'a, T: TypeSystem> Eq for Ty<'a, T> {}
