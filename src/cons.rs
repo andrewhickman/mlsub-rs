@@ -3,6 +3,7 @@ use std::fmt::Debug;
 use std::hash::{BuildHasherDefault, Hash};
 
 use im::hashmap::{self, Entry, HashMap};
+use lazy_static::lazy_static;
 use seahash::SeaHasher;
 
 use crate::Polarity;
@@ -63,8 +64,12 @@ impl<C: Constructor> ConstructorSet<C> {
 
 impl<C: Constructor> Default for ConstructorSet<C> {
     fn default() -> Self {
+        lazy_static! {
+            static ref HASHER: HashMap<(), (), BuildHasherDefault<SeaHasher>> = HashMap::default();
+        }
+
         ConstructorSet {
-            set: HashMap::default(),
+            set: HASHER.new_from(),
         }
     }
 }

@@ -1,8 +1,8 @@
-use std::iter::FromIterator;
 use std::hash::BuildHasherDefault;
+use std::iter::FromIterator;
 
-use lazy_static::lazy_static;
 use im::{hashset, HashSet};
+use lazy_static::lazy_static;
 use seahash::SeaHasher;
 
 use crate::auto::{Automaton, StateId};
