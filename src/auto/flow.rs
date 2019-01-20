@@ -1,6 +1,8 @@
 use std::iter::FromIterator;
+use std::hash::BuildHasherDefault;
 
 use im::{hashset, HashSet};
+use seahash::SeaHasher;
 
 use crate::auto::{Automaton, StateId};
 use crate::{Polarity, TypeSystem};
@@ -13,7 +15,7 @@ pub struct Pair {
 
 #[derive(Default, Debug, Clone)]
 pub(crate) struct FlowSet {
-    set: HashSet<StateId>,
+    set: HashSet<StateId, BuildHasherDefault<SeaHasher>>,
 }
 
 impl FlowSet {
