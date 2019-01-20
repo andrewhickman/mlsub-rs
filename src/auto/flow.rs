@@ -1,6 +1,7 @@
 use std::iter::FromIterator;
 use std::hash::BuildHasherDefault;
 
+use lazy_static::lazy_static;
 use im::{hashset, HashSet};
 use seahash::SeaHasher;
 
@@ -13,7 +14,7 @@ pub struct Pair {
     pub pos: StateId,
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct FlowSet {
     set: HashSet<StateId, BuildHasherDefault<SeaHasher>>,
 }
@@ -34,6 +35,18 @@ impl FlowSet {
 
     pub(in crate::auto) fn union(&mut self, other: &Self) {
         self.set.extend(other.iter());
+    }
+}
+
+impl Default for FlowSet {
+    fn default() -> Self {
+        lazy_static! {
+            static ref EMPTY: FlowSet = FlowSet {
+                set: HashSet::default()
+            };
+        }
+
+        EMPTY.clone()
     }
 }
 
