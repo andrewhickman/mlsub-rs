@@ -1,6 +1,4 @@
 mod build;
-#[cfg(test)]
-mod cmp;
 mod flow;
 mod reduce;
 mod trans;
