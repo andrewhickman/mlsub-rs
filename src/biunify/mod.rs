@@ -1,6 +1,4 @@
 #[cfg(test)]
-mod bisubst;
-#[cfg(test)]
 mod reference;
 #[cfg(test)]
 mod tests;
