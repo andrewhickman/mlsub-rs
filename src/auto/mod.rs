@@ -65,6 +65,13 @@ impl<T: TypeSystem> Automaton<T> {
         &mut self.states[id]
     }
 
+    pub(crate) fn merge(&mut self, pol: Polarity, target: StateId, source: StateId) {
+        match pol {
+            Polarity::Pos => self.merge_pos(target, source),
+            Polarity::Neg => self.merge_neg(target, source),
+        }
+    }
+
     pub(crate) fn merge_pos(&mut self, target_id: StateId, source_id: StateId) {
         if target_id != source_id {
             let (target, source) = index2(&mut self.states, target_id, source_id);
