@@ -19,9 +19,11 @@ use crate::Polarity;
 pub fn arb_auto_ty(pol: Polarity) -> BoxedStrategy<(Automaton<MlSub>, StateId)> {
     arb_polar_ty(pol)
         .prop_map(move |ty| {
-            let mut builder = Automaton::builder();
+            let mut auto = Automaton::new();
+            let mut builder = auto.builder();
             let id = builder.build_polar(pol, &ty);
-            (builder.build(), id)
+            builder.finish();
+            (auto, id)
         })
         .boxed()
 }

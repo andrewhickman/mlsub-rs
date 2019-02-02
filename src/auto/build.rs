@@ -4,7 +4,7 @@ use std::hash::Hash;
 
 use im::Vector;
 
-use crate::auto::{flow, Automaton, State, StateId, Symbol};
+use crate::auto::{Automaton, State, StateId, Symbol, FlowSet};
 use crate::polar;
 use crate::{Polarity, TypeSystem};
 
@@ -16,21 +16,25 @@ pub trait Build<T: TypeSystem, V>: Sized {
         F: FnMut(T::Symbol, &'a polar::Ty<Self, V>);
 }
 
-pub struct Builder<T: TypeSystem, V> {
-    auto: Automaton<T>,
+pub struct Builder<'a, T, V> 
+where
+    T: TypeSystem,
+    V: Eq + Hash + Clone,
+{
+    auto: &'a mut Automaton<T>,
     vars: HashMap<StateId, (Polarity, Vec<V>)>,
 }
 
-impl<T: TypeSystem> Automaton<T> {
-    pub fn builder<V: Eq + Hash>() -> Builder<T, V> {
+impl<'a, T: TypeSystem> Automaton<T> {
+    pub fn builder<V: Eq + Hash + Clone>(&'a mut self) -> Builder<T, V> {
         Builder {
-            auto: Automaton::new(),
+            auto: self,
             vars: HashMap::new(),
         }
     }
 }
 
-impl<T, V> Builder<T, V>
+impl<'a, T, V> Builder<'a, T, V>
 where
     T: TypeSystem,
     V: Eq + Hash + Clone,
@@ -47,12 +51,12 @@ where
         at
     }
 
-    fn build_polar_closure_at<'a, C>(
+    fn build_polar_closure_at<'b, C>(
         &mut self,
         pol: Polarity,
         at: StateId,
-        ty: &'a polar::Ty<C, V>,
-        stack: &mut Vec<(Polarity, StateId, &'a polar::Ty<C, V>, Vector<StateId>)>,
+        ty: &'b polar::Ty<C, V>,
+        stack: &mut Vec<(Polarity, StateId, &'b polar::Ty<C, V>, Vector<StateId>)>,
         recs: &mut Vector<StateId>,
     ) where
         C: Build<T, V>,
@@ -98,12 +102,12 @@ where
         }
     }
 
-    fn build_polar_closure<'a, C>(
+    fn build_polar_closure<'b, C>(
         &mut self,
         pol: Polarity,
         out: bool,
-        ty: &'a polar::Ty<C, V>,
-        stack: &mut Vec<(Polarity, StateId, &'a polar::Ty<C, V>, Vector<StateId>)>,
+        ty: &'b polar::Ty<C, V>,
+        stack: &mut Vec<(Polarity, StateId, &'b polar::Ty<C, V>, Vector<StateId>)>,
         recs: &mut Vector<StateId>,
     ) -> StateId
     where
@@ -122,30 +126,8 @@ where
         }
     }
 
-    pub fn build(mut self) -> Automaton<T> {
-        let mut map: HashMap<V, (Vec<_>, Vec<_>)> = HashMap::new();
-
-        for (id, (pol, vars)) in self.vars {
-            for var in vars {
-                let (negs, poss) = map.entry(var.clone()).or_default();
-                match pol {
-                    Polarity::Pos => {
-                        poss.push(id);
-                        for &mut neg in negs {
-                            self.auto.add_flow(flow::Pair { neg, pos: id });
-                        }
-                    }
-                    Polarity::Neg => {
-                        negs.push(id);
-                        for &mut pos in poss {
-                            self.auto.add_flow(flow::Pair { pos, neg: id });
-                        }
-                    }
-                }
-            }
-        }
-
-        self.auto
+    pub fn finish(self) {
+        drop(self)
     }
 
     /// Build an empty state, representing the bottom and top types for positive and negative
@@ -190,4 +172,33 @@ where
     //     self.add_flow(pair);
     //     pair
     // }
+}
+
+impl<'a, T, V> Drop for Builder<'a, T, V>
+where
+    T: TypeSystem,
+    V: Eq + Hash + Clone,
+{
+    fn drop(&mut self) {
+        let mut map: HashMap<V, (FlowSet, FlowSet)> = HashMap::new();
+
+        for (&id, (pol, vars)) in &self.vars {
+            for var in vars {
+                let (negs, poss) = map.entry(var.clone()).or_default();
+                match pol {
+                    Polarity::Pos => poss.add(id),
+                    Polarity::Neg => negs.add(id),
+                }
+            }
+        }
+
+        for (negs, poss) in map.values() {
+            for id in negs.iter() {
+                self.auto.index_mut(id).flow.union(poss);
+            }
+            for id in poss.iter() {
+                self.auto.index_mut(id).flow.union(negs);
+            }
+        }
+    }
 }

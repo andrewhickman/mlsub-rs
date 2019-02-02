@@ -8,8 +8,9 @@ use crate::Polarity;
 
 #[test]
 fn constructed() {
-    let mut builder = Automaton::builder();
+    let mut auto = Automaton::new();
 
+    let mut builder = auto.builder();
     let lhs_id = builder.build_polar(
         Polarity::Pos,
         &Ty::Constructed(Constructed::Record(Default::default())),
@@ -21,8 +22,7 @@ fn constructed() {
             Box::new(Ty::Constructed(Constructed::Bool)),
         ),
     );
-
-    let mut auto = builder.build();
+    builder.finish();
 
     assert!(!auto.biunify(lhs_id, rhs_id));
 }
@@ -30,12 +30,13 @@ fn constructed() {
 proptest! {
     #[test]
     fn biunify(lhs in arb_polar_ty(Polarity::Pos), rhs in arb_polar_ty(Polarity::Neg)) {
-        let mut builder = Automaton::builder();
+        let mut auto = Automaton::new();
 
+        let mut builder = auto.builder();
         let lhs_id = builder.build_polar(Polarity::Pos, &lhs);
         let rhs_id = builder.build_polar(Polarity::Neg, &rhs);
+        builder.finish();
 
-        let mut auto = builder.build();
         prop_assert_eq!(
             auto.biunify(lhs_id, rhs_id),
             reference::biunify(lhs, rhs).is_ok()
@@ -44,11 +45,12 @@ proptest! {
 
     #[test]
     fn biunify_reduced(lhs in arb_polar_ty(Polarity::Pos), rhs in arb_polar_ty(Polarity::Neg)) {
-        let mut builder = Automaton::builder();
+        let mut auto = Automaton::new();
 
+        let mut builder = auto.builder();
         let lhs_id = builder.build_polar(Polarity::Pos, &lhs);
         let rhs_id = builder.build_polar(Polarity::Neg, &rhs);
-        let auto = builder.build();
+        builder.finish();
 
         let mut reduced = Automaton::new();
         let dfa_ids = reduced.reduce(&auto, [(lhs_id, Polarity::Pos), (rhs_id, Polarity::Neg)].iter().cloned());

@@ -24,6 +24,10 @@ impl FlowSet {
         self.set.clone().into_iter()
     }
 
+    pub(in crate::auto) fn add(&mut self, id: StateId) {
+        self.set.insert(id);
+    }
+
     pub(in crate::auto) fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = StateId>,
