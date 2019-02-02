@@ -4,7 +4,7 @@ use std::hash::Hash;
 
 use im::Vector;
 
-use crate::auto::{Automaton, State, StateId, Symbol, FlowSet};
+use crate::auto::{flow, Automaton, State, StateId, Symbol, FlowSet};
 use crate::polar;
 use crate::{Polarity, TypeSystem};
 
@@ -32,6 +32,31 @@ impl<'a, T: TypeSystem> Automaton<T> {
             vars: HashMap::new(),
         }
     }
+
+    /// Build an empty state, representing the bottom and top types for positive and negative
+    /// polarities respectively.
+    pub fn build_empty(&mut self, pol: Polarity) -> StateId {
+        self.add(State::new(pol))
+    }
+
+    /// Build an state representing the join or meet of some states for positive and negative
+    /// polarities respectively.
+    pub fn build_add<I>(&mut self, pol: Polarity, states: I) -> StateId 
+    where
+        I: IntoIterator<Item = StateId>
+    {
+        unimplemented!()
+    }
+
+    /// Create a type variable representing data flow from negative to positive states.
+    pub(crate) fn build_var(&mut self) -> flow::Pair {
+        let pair = flow::Pair {
+            neg: self.build_empty(Polarity::Neg),
+            pos: self.build_empty(Polarity::Pos),
+        };
+        self.add_flow(pair);
+        pair
+    }
 }
 
 impl<'a, T, V> Builder<'a, T, V>
@@ -43,7 +68,7 @@ where
     where
         C: Build<T, V>,
     {
-        let at = self.build_empty(pol);
+        let at = self.auto.build_empty(pol);
         let mut stack = vec![(pol, at, ty, Vector::new())];
         while let Some((pol, at, ty, mut recs)) = stack.pop() {
             self.build_polar_closure_at(pol, at, ty, &mut stack, &mut recs);
@@ -69,17 +94,16 @@ where
         match ty {
             polar::Ty::Recursive(inner) => {
                 recs.push_front(at);
-                let expr = self.build_polar_closure(pol, false, inner, stack, recs);
+                let expr = self.build_polar_closure(pol, true, inner, stack, recs);
                 recs.pop_front();
 
                 self.merge(pol, at, expr);
             }
             polar::Ty::BoundVar(_) => unreachable!(),
             polar::Ty::Add(l, r) => {
-                let l = self.build_polar_closure(pol, false, l, stack, recs);
+                let l = self.build_polar_closure(pol, true, l, stack, recs);
+                let r = self.build_polar_closure(pol, true, r, stack, recs);
                 self.merge(pol, at, l);
-
-                let r = self.build_polar_closure(pol, false, r, stack, recs);
                 self.merge(pol, at, r);
             }
             polar::Ty::UnboundVar(var) => {
@@ -95,7 +119,7 @@ where
 
                 c.visit_transitions(|symbol, ty| {
                     let id =
-                        self.build_polar_closure(pol * symbol.polarity(), true, ty, stack, recs);
+                        self.build_polar_closure(pol * symbol.polarity(), false, ty, stack, recs);
                     self.auto.index_mut(at).trans.add(symbol, id);
                 });
             }
@@ -105,7 +129,7 @@ where
     fn build_polar_closure<'b, C>(
         &mut self,
         pol: Polarity,
-        out: bool,
+        epsilon: bool,
         ty: &'b polar::Ty<C, V>,
         stack: &mut Vec<(Polarity, StateId, &'b polar::Ty<C, V>, Vector<StateId>)>,
         recs: &mut Vector<StateId>,
@@ -116,11 +140,11 @@ where
         if let polar::Ty::BoundVar(idx) = *ty {
             recs[idx]
         } else {
-            let id = self.build_empty(pol);
-            if out {
-                stack.push((pol, id, ty, recs.clone()));
-            } else {
+            let id = self.auto.build_empty(pol);
+            if epsilon {
                 self.build_polar_closure_at(pol, id, ty, stack, recs);
+            } else {
+                stack.push((pol, id, ty, recs.clone()));
             }
             id
         }
@@ -128,12 +152,6 @@ where
 
     pub fn finish(self) {
         drop(self)
-    }
-
-    /// Build an empty state, representing the bottom and top types for positive and negative
-    /// polarities respectively.
-    pub(crate) fn build_empty(&mut self, pol: Polarity) -> StateId {
-        self.auto.add(State::new(pol))
     }
 
     fn merge(&mut self, pol: Polarity, target: StateId, source: StateId) {
@@ -150,28 +168,6 @@ where
                 .extend(vars);
         }
     }
-
-    // pub(crate) fn build_flow<N, P>(&mut self, neg: N, pos: P)
-    // where
-    //     N: IntoIterator<Item = StateId>,
-    //     N::IntoIter: Clone,
-    //     P: IntoIterator<Item = StateId>,
-    //     P::IntoIter: Clone,
-    // {
-    //     for (neg, pos) in iproduct!(neg, pos) {
-    //         self.add_flow(flow::Pair { neg, pos });
-    //     }
-    // }
-
-    // /// Create a type variable representing data flow from negative to positive states.
-    // pub(crate) fn build_var(&mut self) -> flow::Pair {
-    //     let pair = flow::Pair {
-    //         neg: self.build_empty(Polarity::Neg),
-    //         pos: self.build_empty(Polarity::Pos),
-    //     };
-    //     self.add_flow(pair);
-    //     pair
-    // }
 }
 
 impl<'a, T, V> Drop for Builder<'a, T, V>
