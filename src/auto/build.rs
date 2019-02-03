@@ -45,7 +45,11 @@ impl<'a, T: TypeSystem> Automaton<T> {
     where
         I: IntoIterator<Item = StateId>,
     {
-        unimplemented!()
+        let target = self.build_empty(pol);
+        for source in states {
+            self.merge(pol, target, source);
+        }
+        target
     }
 
     /// Create a type variable representing data flow from negative to positive states.
