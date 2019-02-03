@@ -53,7 +53,7 @@ impl<'a, T: TypeSystem> Automaton<T> {
     }
 
     /// Create a type variable representing data flow from negative to positive states.
-    pub(crate) fn build_var(&mut self) -> flow::Pair {
+    pub fn build_var(&mut self) -> flow::Pair {
         let pair = flow::Pair {
             neg: self.build_empty(Polarity::Neg),
             pos: self.build_empty(Polarity::Pos),
