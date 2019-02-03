@@ -2,13 +2,21 @@ use std::collections::HashSet;
 use std::ops;
 
 use im::Vector;
+use proptest::strategy::Strategy;
 
 use crate::polar::Ty;
-use crate::tests::Constructed;
+use crate::tests::{Constructed, arb_polar_ty};
 use crate::Polarity;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-struct Constraint(Ty<Constructed, char>, Ty<Constructed, char>);
+pub(in crate::biunify) struct Constraint(
+    pub(in crate::biunify) Ty<Constructed, char>,
+    pub(in crate::biunify) Ty<Constructed, char>,
+);
+
+pub(in crate::biunify) fn arb_constraint() -> impl Strategy<Value = Constraint> {
+    (arb_polar_ty(Polarity::Pos), arb_polar_ty(Polarity::Neg)).prop_map(|(l, r)| Constraint(l, r))
+}
 
 impl Constraint {
     fn bisubst(self, sub: &Bisubst) -> Self {
@@ -222,11 +230,11 @@ fn shift(ty: &mut Ty<Constructed, char>, n: usize) {
     }
 }
 
-pub(in crate::biunify) fn biunify(
-    lhs: Ty<Constructed, char>,
-    rhs: Ty<Constructed, char>,
-) -> Result<Bisubst, ()> {
-    let mut cons = vec![Constraint(lhs, rhs)];
+pub(in crate::biunify) fn biunify(constraint: Constraint) -> Result<Bisubst, ()> {
+    biunify_all(vec![constraint])
+}
+
+pub(in crate::biunify) fn biunify_all(mut cons: Vec<Constraint>) -> Result<Bisubst, ()> {
     let mut hyp = HashSet::new();
     let mut result = Bisubst::new();
     while let Some(con) = cons.pop() {

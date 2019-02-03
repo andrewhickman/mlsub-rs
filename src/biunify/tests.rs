@@ -1,9 +1,11 @@
 use proptest::{prop_assert, prop_assert_eq, proptest, proptest_helper};
+use proptest::collection::vec;
+use itertools::Itertools;
 
 use crate::auto::Automaton;
-use crate::biunify::reference;
+use crate::biunify::reference::{self, arb_constraint};
 use crate::polar::Ty;
-use crate::tests::{arb_polar_ty, Constructed};
+use crate::tests::Constructed;
 use crate::Polarity;
 
 #[test]
@@ -29,27 +31,27 @@ fn constructed() {
 
 proptest! {
     #[test]
-    fn biunify(lhs in arb_polar_ty(Polarity::Pos), rhs in arb_polar_ty(Polarity::Neg)) {
+    fn biunify(con in arb_constraint()) {
         let mut auto = Automaton::new();
 
         let mut builder = auto.builder();
-        let lhs_id = builder.build_polar(Polarity::Pos, &lhs);
-        let rhs_id = builder.build_polar(Polarity::Neg, &rhs);
+        let lhs_id = builder.build_polar(Polarity::Pos, &con.0);
+        let rhs_id = builder.build_polar(Polarity::Neg, &con.1);
         builder.finish();
 
         prop_assert_eq!(
             auto.biunify(lhs_id, rhs_id),
-            reference::biunify(lhs, rhs).is_ok()
+            reference::biunify(con).is_ok()
         );
     }
 
     #[test]
-    fn biunify_reduced(lhs in arb_polar_ty(Polarity::Pos), rhs in arb_polar_ty(Polarity::Neg)) {
+    fn biunify_reduced(con in arb_constraint()) {
         let mut auto = Automaton::new();
 
         let mut builder = auto.builder();
-        let lhs_id = builder.build_polar(Polarity::Pos, &lhs);
-        let rhs_id = builder.build_polar(Polarity::Neg, &rhs);
+        let lhs_id = builder.build_polar(Polarity::Pos, &con.0);
+        let rhs_id = builder.build_polar(Polarity::Neg, &con.1);
         builder.finish();
 
         let mut reduced = Automaton::new();
@@ -57,7 +59,46 @@ proptest! {
 
         prop_assert_eq!(
             reduced.biunify(dfa_ids.start, dfa_ids.start + 1),
-            reference::biunify(lhs, rhs).is_ok()
+            reference::biunify(con).is_ok()
+        );
+    }
+
+    #[test]
+    fn biunify_all(cons in vec(arb_constraint(), 0..16)) {
+        let mut auto = Automaton::new();
+
+        let mut builder = auto.builder();
+        let ids: Vec<_> = cons.iter().map(|con| {
+            let lhs_id = builder.build_polar(Polarity::Pos, &con.0);
+            let rhs_id = builder.build_polar(Polarity::Neg, &con.1);
+            (lhs_id, rhs_id)
+        }).collect();
+        builder.finish();
+
+        prop_assert_eq!(
+            auto.biunify_all(ids),
+            reference::biunify_all(cons).is_ok()
+        );
+    }
+
+    #[test]
+    fn biunify_all_reduced(cons in vec(arb_constraint(), 0..16)) {
+        let mut auto = Automaton::new();
+
+        let mut builder = auto.builder();
+        let ids: Vec<_> = cons.iter().flat_map(|con| {
+            let lhs_id = builder.build_polar(Polarity::Pos, &con.0);
+            let rhs_id = builder.build_polar(Polarity::Neg, &con.1);
+            vec![(lhs_id, Polarity::Pos), (rhs_id, Polarity::Neg)]
+        }).collect();
+        builder.finish();
+
+        let mut reduced = Automaton::new();
+        let dfa_ids = reduced.reduce(&auto, ids);
+
+        prop_assert_eq!(
+            reduced.biunify_all(dfa_ids.tuples()),
+            reference::biunify_all(cons).is_ok()
         );
     }
 }

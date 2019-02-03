@@ -5,6 +5,7 @@ mod tests;
 
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
+use std::iter::once;
 
 use seahash::SeaHasher;
 
@@ -14,8 +15,17 @@ use crate::{Polarity, TypeSystem};
 impl<T: TypeSystem> Automaton<T> {
     /// Solves a constraint t⁺ ≤ t⁻ where t⁺ and t⁻ are represented by the states `qp` and `qn`.
     pub fn biunify(&mut self, qp: StateId, qn: StateId) -> bool {
+        self.biunify_all(once((qp, qn)))
+    }
+
+    pub fn biunify_all<I>(&mut self, constraints: I) -> bool
+    where
+        I: IntoIterator<Item = (StateId, StateId)>,
+    {
         let mut seen = HashSet::with_capacity_and_hasher(20, Default::default());
-        self.biunify_impl(&mut seen, qp, qn).is_ok()
+        constraints
+            .into_iter()
+            .all(|(qp, qn)| self.biunify_impl(&mut seen, qp, qn).is_ok())
     }
 
     fn biunify_impl(
