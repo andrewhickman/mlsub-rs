@@ -45,11 +45,18 @@ impl<'a, T: TypeSystem> Automaton<T> {
     where
         I: IntoIterator<Item = StateId>,
     {
-        let target = self.build_empty(pol);
+        let id = self.build_empty(pol);
+        self.build_add_at(pol, id, states);
+        id
+    }
+
+    fn build_add_at<I>(&mut self, pol: Polarity, at: StateId, states: I)
+    where
+        I: IntoIterator<Item = StateId>,
+    {
         for source in states {
-            self.merge(pol, target, source);
+            self.merge(pol, at, source);
         }
-        target
     }
 
     /// Create a type variable representing data flow from negative to positive states.
@@ -60,6 +67,23 @@ impl<'a, T: TypeSystem> Automaton<T> {
         };
         self.add_flow(pair);
         pair
+    }
+
+    pub fn build_constructed<I>(&mut self, pol: Polarity, con: T::Constructor, trans: I) -> StateId
+    where
+        I: IntoIterator<Item = (T::Symbol, StateId)>,
+    {
+        let at = self.build_empty(pol);
+
+        let con = Cow::Owned(con);
+        match pol {
+            Polarity::Pos => self.index_mut(at).cons.add_pos(con),
+            Polarity::Neg => self.index_mut(at).cons.add_neg(con),
+        };
+
+        self.index_mut(at).trans.extend(trans);
+
+        at
     }
 }
 
@@ -107,8 +131,8 @@ where
             polar::Ty::Add(l, r) => {
                 let l = self.build_polar_closure(pol, true, l, stack, recs);
                 let r = self.build_polar_closure(pol, true, r, stack, recs);
-                self.auto.merge(pol, at, l);
-                self.auto.merge(pol, at, r);
+
+                self.auto.build_add_at(pol, at, [l, r].iter().cloned());
             }
             polar::Ty::UnboundVar(var) => {
                 let Builder { vars, auto } = self;

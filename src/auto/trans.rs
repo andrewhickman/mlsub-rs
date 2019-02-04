@@ -59,6 +59,18 @@ impl<S: Symbol> TransitionSet<S> {
     }
 }
 
+impl<S: Symbol> Extend<(S, StateId)> for TransitionSet<S> {
+    fn extend<I>(&mut self, iter: I)
+    where
+        I: IntoIterator<Item = (S, StateId)>,
+    {
+        self.set().extend(
+            iter.into_iter()
+                .map(|(symbol, id)| Transition { symbol, id }),
+        )
+    }
+}
+
 impl<S: Symbol> Default for TransitionSet<S> {
     fn default() -> Self {
         TransitionSet { set: None }

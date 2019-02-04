@@ -14,10 +14,12 @@ use crate::{Polarity, TypeSystem};
 
 impl<T: TypeSystem> Automaton<T> {
     /// Solves a constraint t⁺ ≤ t⁻ where t⁺ and t⁻ are represented by the states `qp` and `qn`.
+    #[must_use]
     pub fn biunify(&mut self, qp: StateId, qn: StateId) -> bool {
         self.biunify_all(once((qp, qn)))
     }
 
+    #[must_use]
     pub fn biunify_all<I>(&mut self, constraints: I) -> bool
     where
         I: IntoIterator<Item = (StateId, StateId)>,

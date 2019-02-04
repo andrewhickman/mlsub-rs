@@ -5,7 +5,7 @@ use im::Vector;
 use proptest::strategy::Strategy;
 
 use crate::polar::Ty;
-use crate::tests::{Constructed, arb_polar_ty};
+use crate::tests::{arb_polar_ty, Constructed};
 use crate::Polarity;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

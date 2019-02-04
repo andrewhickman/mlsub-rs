@@ -1,6 +1,6 @@
-use proptest::{prop_assert, prop_assert_eq, proptest, proptest_helper};
-use proptest::collection::vec;
 use itertools::Itertools;
+use proptest::collection::vec;
+use proptest::{prop_assert, prop_assert_eq, proptest, proptest_helper};
 
 use crate::auto::Automaton;
 use crate::biunify::reference::{self, arb_constraint};
