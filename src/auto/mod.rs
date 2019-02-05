@@ -1,5 +1,6 @@
+pub mod flow;
+
 mod build;
-mod flow;
 mod reduce;
 mod trans;
 

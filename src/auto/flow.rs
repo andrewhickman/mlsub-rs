@@ -62,7 +62,6 @@ impl<T: TypeSystem> Automaton<T> {
         debug_assert_eq!(had_p, had_n);
     }
 
-    #[allow(dead_code)]
     pub(crate) fn remove_flow(&mut self, pair: Pair) {
         #[cfg(debug_assertions)]
         debug_assert_eq!(self.index(pair.pos).pol, Polarity::Pos);
@@ -82,6 +81,15 @@ impl<T: TypeSystem> Automaton<T> {
             .remove(&pair.pos)
             .is_some();
         debug_assert_eq!(had_p, had_n);
+    }
+
+    pub(crate) fn has_flow(&self, pair: Pair) -> bool {
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(self.index(pair.pos).pol, Polarity::Pos);
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(self.index(pair.neg).pol, Polarity::Neg);
+
+        self.index(pair.neg).flow.set.contains(&pair.pos)
     }
 
     pub(crate) fn merge_flow_pos(&mut self, pos: StateId, source: StateId) {

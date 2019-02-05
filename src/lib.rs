@@ -2,6 +2,7 @@ pub mod auto;
 pub mod polar;
 
 mod biunify;
+mod subsume;
 mod cons;
 #[cfg(test)]
 mod tests;
