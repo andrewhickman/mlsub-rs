@@ -7,20 +7,29 @@ mod subsume;
 #[cfg(test)]
 mod tests;
 
-pub use self::cons::Constructor;
+pub use self::cons::{Constructor, Label};
 
 use std::fmt::Debug;
 use std::ops;
 
 pub trait TypeSystem {
-    type Constructor: Constructor + Debug;
-    type Symbol: auto::Symbol + Debug;
+    type Constructor: Constructor<Label = Self::Label> + Debug;
+    type Label: Label + Debug;
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Polarity {
     Neg = -1,
     Pos = 1,
+}
+
+impl Polarity {
+    pub(crate) fn flip<T>(self, a: T, b: T) -> (T, T) {
+        match self {
+            Polarity::Pos => (a, b),
+            Polarity::Neg => (b, a),
+        }
+    }
 }
 
 impl ops::Neg for Polarity {

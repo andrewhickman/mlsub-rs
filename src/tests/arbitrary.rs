@@ -22,7 +22,7 @@ pub fn arb_auto_ty(pol: Polarity) -> BoxedStrategy<(Automaton<MlSub>, StateId)> 
             let mut auto = Automaton::new();
             let mut builder = auto.builder();
             let id = builder.build_polar(pol, &ty);
-            builder.finish();
+            drop(builder);
             (auto, id)
         })
         .boxed()

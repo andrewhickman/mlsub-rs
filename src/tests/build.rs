@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
-use super::{Constructor, MlSub, Symbol};
-use crate::auto::Build;
+use super::{Constructor, Label, MlSub};
+use crate::auto::{Build, StateSet};
 use crate::polar::Ty;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -13,29 +13,21 @@ pub enum Constructed {
 }
 
 impl Build<MlSub, char> for Constructed {
-    fn constructor(&self) -> Constructor {
-        match self {
-            Constructed::Bool => Constructor::Bool,
-            Constructed::Fun(..) => Constructor::Fun,
-            Constructed::Record(fields) => Constructor::Record(fields.keys().cloned().collect()),
-        }
-    }
-
-    fn visit_transitions<'a, F>(&'a self, mut visit: F)
+    fn map<'a, F>(&'a self, mut mapper: F) -> Constructor
     where
-        F: FnMut(Symbol, &'a Ty<Constructed, char>),
+        F: FnMut(Label, &'a Ty<Self, char>) -> StateSet,
     {
         match self {
-            Constructed::Bool => (),
-            Constructed::Fun(domain, range) => {
-                visit(Symbol::Domain, &*domain);
-                visit(Symbol::Range, &*range);
+            Constructed::Bool => Constructor::Bool,
+            Constructed::Fun(lhs, rhs) => {
+                Constructor::Fun(mapper(Label::Domain, lhs), mapper(Label::Range, rhs))
             }
-            Constructed::Record(fields) => {
-                for (label, ty) in fields {
-                    visit(Symbol::Label(label.clone()), &*ty);
-                }
-            }
+            Constructed::Record(fields) => Constructor::Record(
+                fields
+                    .iter()
+                    .map(|(label, ty)| (label.clone(), mapper(Label::Label(label.clone()), ty)))
+                    .collect(),
+            ),
         }
     }
 }

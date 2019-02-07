@@ -24,7 +24,7 @@ fn constructed() {
             Box::new(Ty::Constructed(Constructed::Bool)),
         ),
     );
-    builder.finish();
+    drop(builder);
 
     assert!(!auto.biunify(lhs_id, rhs_id));
 }
@@ -37,7 +37,7 @@ proptest! {
         let mut builder = auto.builder();
         let lhs_id = builder.build_polar(Polarity::Pos, &con.0);
         let rhs_id = builder.build_polar(Polarity::Neg, &con.1);
-        builder.finish();
+        drop(builder);
 
         prop_assert_eq!(
             auto.biunify(lhs_id, rhs_id),
@@ -52,7 +52,7 @@ proptest! {
         let mut builder = auto.builder();
         let lhs_id = builder.build_polar(Polarity::Pos, &con.0);
         let rhs_id = builder.build_polar(Polarity::Neg, &con.1);
-        builder.finish();
+        drop(builder);
 
         let mut reduced = Automaton::new();
         let dfa_ids: Vec<_> = reduced.reduce(&auto, [(lhs_id, Polarity::Pos), (rhs_id, Polarity::Neg)].iter().cloned()).collect();
@@ -73,7 +73,7 @@ proptest! {
             let rhs_id = builder.build_polar(Polarity::Neg, &con.1);
             (lhs_id, rhs_id)
         }).collect();
-        builder.finish();
+        drop(builder);
 
         prop_assert_eq!(
             auto.biunify_all(ids),
@@ -91,7 +91,7 @@ proptest! {
             let rhs_id = builder.build_polar(Polarity::Neg, &con.1);
             vec![(lhs_id, Polarity::Pos), (rhs_id, Polarity::Neg)]
         }).collect();
-        builder.finish();
+        drop(builder);
 
         let mut reduced = Automaton::new();
         let dfa_ids = reduced.reduce(&auto, ids);

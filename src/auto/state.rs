@@ -1,6 +1,11 @@
+use std::hash::BuildHasherDefault;
+use std::iter::{once, Once};
 use std::ops::Range;
 
-use crate::auto::{Automaton, ConstructorSet, FlowSet, TransitionSet};
+use im::hashset::{ConsumingIter, HashSet};
+use seahash::SeaHasher;
+
+use crate::auto::{Automaton, ConstructorSet, FlowSet};
 use crate::{Polarity, TypeSystem};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
@@ -14,8 +19,20 @@ pub(crate) struct State<T: TypeSystem> {
     #[cfg(debug_assertions)]
     pub(crate) pol: Polarity,
     pub(crate) cons: ConstructorSet<T::Constructor>,
-    pub(crate) trans: TransitionSet<T::Symbol>,
     pub(crate) flow: FlowSet,
+}
+
+/// A non-empty set of states, optimized for the common case where only one state is in the set.
+// TODO priv enum
+#[derive(Debug, Clone)]
+pub enum StateSet {
+    Singleton(StateId),
+    Set(HashSet<StateId, BuildHasherDefault<SeaHasher>>),
+}
+
+pub enum StateSetIter {
+    Singleton(Once<StateId>),
+    Set(ConsumingIter<StateId>),
 }
 
 impl<T: TypeSystem> State<T> {
@@ -24,7 +41,6 @@ impl<T: TypeSystem> State<T> {
             #[cfg(debug_assertions)]
             pol: _pol,
             cons: ConstructorSet::default(),
-            trans: TransitionSet::default(),
             flow: FlowSet::default(),
         }
     }
@@ -36,7 +52,6 @@ impl<T: TypeSystem> Clone for State<T> {
             #[cfg(debug_assertions)]
             pol: self.pol,
             cons: self.cons.clone(),
-            trans: self.trans.clone(),
             flow: self.flow.clone(),
         }
     }
@@ -93,5 +108,76 @@ impl Iterator for StateRange {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(StateId)
+    }
+}
+
+impl StateSet {
+    pub fn insert(&mut self, id: StateId) -> bool {
+        self.to_set().insert(id).is_some()
+    }
+
+    pub fn union(&mut self, other: &Self) {
+        match other {
+            StateSet::Singleton(id) => {
+                self.insert(*id);
+            }
+            StateSet::Set(set) => self.to_set().extend(set.iter().cloned()),
+        }
+    }
+
+    pub fn iter(&self) -> StateSetIter {
+        match self {
+            StateSet::Singleton(id) => StateSetIter::Singleton(once(*id)),
+            StateSet::Set(set) => StateSetIter::Set(set.clone().into_iter()),
+        }
+    }
+
+    pub fn to_set(&mut self) -> &mut HashSet<StateId, BuildHasherDefault<SeaHasher>> {
+        if let StateSet::Singleton(id) = *self {
+            *self = StateSet::Set(HashSet::default().update(id));
+        }
+        match self {
+            StateSet::Set(set) => set,
+            StateSet::Singleton(_) => unreachable!(),
+        }
+    }
+
+    #[cfg(debug_assertions)]
+    pub(crate) fn is_reduced(&self) -> bool {
+        match self {
+            StateSet::Singleton(_) => true,
+            StateSet::Set(_) => false,
+        }
+    }
+}
+
+impl PartialEq for StateSet {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (StateSet::Set(lhs), StateSet::Set(rhs)) => lhs == rhs,
+            _ => self.iter().eq(other.iter()),
+        }
+    }
+}
+
+impl Eq for StateSet {}
+
+impl IntoIterator for StateSet {
+    type IntoIter = StateSetIter;
+    type Item = StateId;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl Iterator for StateSetIter {
+    type Item = StateId;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            StateSetIter::Singleton(iter) => iter.next(),
+            StateSetIter::Set(iter) => iter.next(),
+        }
     }
 }

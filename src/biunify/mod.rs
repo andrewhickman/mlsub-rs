@@ -9,8 +9,8 @@ use std::iter::once;
 
 use seahash::SeaHasher;
 
-use crate::auto::{Automaton, StateId, Symbol, TransitionSet};
-use crate::{Polarity, TypeSystem};
+use crate::auto::{Automaton, StateId};
+use crate::{Label, Polarity, TypeSystem};
 
 impl<T: TypeSystem> Automaton<T> {
     /// Solves a constraint t⁺ ≤ t⁻ where t⁺ and t⁻ are represented by the states `qp` and `qn`.
@@ -46,34 +46,22 @@ impl<T: TypeSystem> Automaton<T> {
                 return Err(());
             }
             for to in self.index(qn).flow.iter() {
-                self.merge_pos(to, qp);
+                self.merge(Polarity::Pos, to, qp);
             }
             for from in self.index(qp).flow.iter() {
-                self.merge_neg(from, qn);
+                self.merge(Polarity::Neg, from, qn);
             }
-            let jps = self.index(qp).trans.clone();
-            let jns = self.index(qn).trans.clone();
-            for (jp, jn) in common_groups(jps, jns) {
-                self.biunify_impl(seen, jp, jn)?;
+            let jps = self.index(qp).cons.clone();
+            let jns = self.index(qn).cons.clone();
+            for (label, l, r) in jps.intersection(jns) {
+                let (ps, ns) = label.polarity().flip(l, r);
+                for (jp, jn) in product(ps, ns) {
+                    self.biunify_impl(seen, jp, jn)?;
+                }
             }
         }
         Ok(())
     }
-}
-
-fn common_groups<S>(
-    lhs: TransitionSet<S>,
-    rhs: TransitionSet<S>,
-) -> impl Iterator<Item = (StateId, StateId)>
-where
-    S: Symbol,
-{
-    product(lhs, rhs)
-        .filter(|(l, r)| l.symbol() == r.symbol())
-        .map(|(l, r)| match l.symbol().polarity() {
-            Polarity::Pos => (l.id(), r.id()),
-            Polarity::Neg => (r.id(), l.id()),
-        })
 }
 
 fn product<I, J>(lhs: I, rhs: J) -> impl Iterator<Item = (I::Item, J::Item)>

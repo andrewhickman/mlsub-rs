@@ -7,52 +7,74 @@ pub use self::build::Constructed;
 use std::cmp::Ordering;
 use std::mem::{discriminant, Discriminant};
 use std::rc::Rc;
+use std::vec;
 
-use im::OrdSet;
+use im::OrdMap;
 
-use crate::{auto, Polarity, TypeSystem};
+use crate::auto::StateSet;
+use crate::{Polarity, TypeSystem};
 
 #[derive(Debug)]
 pub struct MlSub;
 
 impl TypeSystem for MlSub {
     type Constructor = Constructor;
-    type Symbol = Symbol;
+    type Label = Label;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Constructor {
     Bool,
-    Fun,
-    Record(OrdSet<Rc<str>>),
+    Fun(StateSet, StateSet),
+    Record(OrdMap<Rc<str>, StateSet>),
 }
 
 impl crate::Constructor for Constructor {
+    type Label = Label;
     type Component = Discriminant<Self>;
+    type Params = vec::IntoIter<(Label, StateSet)>;
 
     fn component(&self) -> Self::Component {
         discriminant(self)
     }
 
-    fn join(&mut self, other: &Self) {
+    fn join(&mut self, other: &Self, pol: Polarity) {
         match (self, other) {
             (Constructor::Bool, Constructor::Bool) => (),
-            (Constructor::Fun, Constructor::Fun) => (),
-            (Constructor::Record(ref mut lhs), Constructor::Record(ref rhs)) => {
-                *lhs = lhs.clone().intersection(rhs.clone())
-            }
+            (Constructor::Fun(..), Constructor::Fun(..)) => (),
+            (Constructor::Record(ref mut lhs), Constructor::Record(ref rhs)) => match pol {
+                Polarity::Pos => *lhs = lhs.clone().intersection(rhs.clone()),
+                Polarity::Neg => *lhs = lhs.clone().union(rhs.clone()),
+            },
             _ => unreachable!(),
         }
     }
 
-    fn meet(&mut self, other: &Self) {
-        match (self, other) {
-            (Constructor::Bool, Constructor::Bool) => (),
-            (Constructor::Fun, Constructor::Fun) => (),
-            (Constructor::Record(ref mut lhs), Constructor::Record(ref rhs)) => {
-                *lhs = lhs.clone().union(rhs.clone())
+    fn params(&self) -> Self::Params {
+        match self {
+            Constructor::Bool => vec![],
+            Constructor::Fun(d, r) => vec![(Label::Domain, d.clone()), (Label::Range, r.clone())],
+            Constructor::Record(fields) => fields.clone().into_iter().map(|(label, set)| {
+                (Label::Label(label), set)
+            }).collect()
+        }.into_iter()
+    }
+
+    fn map<F>(self, mut mapper: F) -> Self
+    where
+        F: FnMut(Self::Label, StateSet) -> StateSet,
+    {
+        match self {
+            Constructor::Bool => Constructor::Bool,
+            Constructor::Fun(d, r) => {
+                Constructor::Fun(mapper(Label::Domain, d), mapper(Label::Range, r))
             }
-            _ => unreachable!(),
+            Constructor::Record(fields) => Constructor::Record(
+                fields
+                    .into_iter()
+                    .map(|(label, set)| (label.clone(), mapper(Label::Label(label), set)))
+                    .collect(),
+            ),
         }
     }
 }
@@ -61,33 +83,27 @@ impl PartialOrd for Constructor {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
             (Constructor::Bool, Constructor::Bool) => Some(Ordering::Equal),
-            (Constructor::Fun, Constructor::Fun) => Some(Ordering::Equal),
+            (Constructor::Fun(..), Constructor::Fun(..)) => Some(Ordering::Equal),
             (Constructor::Record(ref lhs), Constructor::Record(ref rhs)) => {
-                iter_set::cmp(lhs, rhs).map(Ordering::reverse)
+                iter_set::cmp(lhs.keys(), rhs.keys()).map(Ordering::reverse)
             }
             _ => None,
         }
     }
 }
 
-impl PartialEq for Constructor {
-    fn eq(&self, other: &Self) -> bool {
-        self.partial_cmp(other) == Some(Ordering::Equal)
-    }
-}
-
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord)]
-pub enum Symbol {
+pub enum Label {
     Domain,
     Range,
     Label(Rc<str>),
 }
 
-impl auto::Symbol for Symbol {
+impl crate::Label for Label {
     fn polarity(&self) -> Polarity {
         match self {
-            Symbol::Domain => Polarity::Neg,
-            Symbol::Range | Symbol::Label(_) => Polarity::Pos,
+            Label::Domain => Polarity::Neg,
+            Label::Range | Label::Label(_) => Polarity::Pos,
         }
     }
 }

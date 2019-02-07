@@ -19,6 +19,21 @@ pub(crate) struct FlowSet {
     set: HashSet<StateId, BuildHasherDefault<SeaHasher>>,
 }
 
+impl Pair {
+    pub(crate) fn from_pol(pol: Polarity, a: StateId, b: StateId) -> Self {
+        let (pos, neg) = pol.flip(a, b);
+        Pair { pos, neg }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn get(&self, pol: Polarity) -> StateId {
+        match pol {
+            Polarity::Pos => self.pos,
+            Polarity::Neg => self.neg,
+        }
+    }
+}
+
 impl FlowSet {
     pub(crate) fn iter(&self) -> hashset::ConsumingIter<StateId> {
         self.set.clone().into_iter()
@@ -92,25 +107,14 @@ impl<T: TypeSystem> Automaton<T> {
         self.index(pair.neg).flow.set.contains(&pair.pos)
     }
 
-    pub(crate) fn merge_flow_pos(&mut self, pos: StateId, source: StateId) {
+    pub(crate) fn merge_flow(&mut self, pol: Polarity, a: StateId, source: StateId) {
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(pos).pol, Polarity::Pos);
+        debug_assert_eq!(self.index(a).pol, pol);
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(source).pol, Polarity::Pos);
+        debug_assert_eq!(self.index(source).pol, pol);
 
-        for neg in self.index(source).flow.iter() {
-            self.add_flow(Pair { pos, neg });
-        }
-    }
-
-    pub(crate) fn merge_flow_neg(&mut self, neg: StateId, source: StateId) {
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(neg).pol, Polarity::Neg);
-        #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(source).pol, Polarity::Neg);
-
-        for pos in self.index(source).flow.iter() {
-            self.add_flow(Pair { pos, neg });
+        for b in self.index(source).flow.iter() {
+            self.add_flow(Pair::from_pol(pol, a, b));
         }
     }
 
