@@ -1,14 +1,15 @@
 #[cfg(test)]
 mod tests;
 
-use core::ops::Range;
 use std::collections::HashMap;
 use std::mem::replace;
 
 use im::{hashset, HashSet};
 use itertools::Itertools;
 
-use crate::auto::{Automaton, FlowSet, State, StateId, Symbol, Transition, TransitionSet};
+use crate::auto::{
+    Automaton, FlowSet, State, StateId, StateRange, Symbol, Transition, TransitionSet,
+};
 use crate::{Polarity, TypeSystem};
 
 impl<T: TypeSystem> State<T> {
@@ -30,7 +31,7 @@ impl<T: TypeSystem> State<T> {
 }
 
 impl<T: TypeSystem> Automaton<T> {
-    pub fn reduce<I>(&mut self, nfa: &Self, nfa_ids: I) -> Range<StateId>
+    pub fn reduce<I>(&mut self, nfa: &Self, nfa_ids: I) -> StateRange
     where
         I: IntoIterator<Item = (StateId, Polarity)>,
     {
@@ -39,7 +40,7 @@ impl<T: TypeSystem> Automaton<T> {
         // Maps between sets of nfa states to corresponding dfa state.
         let mut map = BiMap::with_capacity(nfa.states.len());
 
-        let start = self.states.len();
+        let start = self.next();
         // Stack of states to be converted from nfa states to dfa states.
         let mut stack: Vec<_> = nfa_ids
             .into_iter()
@@ -52,9 +53,9 @@ impl<T: TypeSystem> Automaton<T> {
                 (dfa_id, pol)
             })
             .collect();
-        let end = self.states.len();
+        let range = self.range_from(start);
 
-        debug_assert!(stack.iter().map(|&(id, _)| id).eq(start..end));
+        debug_assert!(stack.iter().map(|&(id, _)| id).eq(range.clone()));
 
         // Walk transitions and convert to dfa ids.
         while let Some((a, a_pol)) = stack.pop() {
@@ -105,7 +106,7 @@ impl<T: TypeSystem> Automaton<T> {
         #[cfg(debug_assertions)]
         debug_assert!(self.is_reduced());
 
-        start..end
+        range
     }
 }
 

@@ -116,7 +116,7 @@ impl<T: TypeSystem> Automaton<T> {
 
     #[cfg(debug_assertions)]
     pub(in crate::auto) fn check_flow(&self) -> bool {
-        self.states.iter().enumerate().all(|(from, st)| {
+        self.enumerate().all(|(from, st)| {
             st.flow
                 .iter()
                 .all(|to| self.index(to).pol != st.pol && self.index(to).flow.set.contains(&from))

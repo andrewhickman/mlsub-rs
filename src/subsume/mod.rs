@@ -3,7 +3,7 @@ use std::hash::BuildHasherDefault;
 
 use seahash::SeaHasher;
 
-use crate::auto::{Automaton, flow, StateId};
+use crate::auto::{flow, Automaton, StateId};
 use crate::TypeSystem;
 
 impl<T: TypeSystem> Automaton<T> {

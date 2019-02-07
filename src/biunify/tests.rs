@@ -55,10 +55,10 @@ proptest! {
         builder.finish();
 
         let mut reduced = Automaton::new();
-        let dfa_ids = reduced.reduce(&auto, [(lhs_id, Polarity::Pos), (rhs_id, Polarity::Neg)].iter().cloned());
+        let dfa_ids: Vec<_> = reduced.reduce(&auto, [(lhs_id, Polarity::Pos), (rhs_id, Polarity::Neg)].iter().cloned()).collect();
 
         prop_assert_eq!(
-            reduced.biunify(dfa_ids.start, dfa_ids.start + 1),
+            reduced.biunify(dfa_ids[0], dfa_ids[1]),
             reference::biunify(con).is_ok()
         );
     }
