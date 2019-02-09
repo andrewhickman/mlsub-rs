@@ -123,8 +123,4 @@ where
             id
         }
     }
-
-    pub fn finish(self) {
-        drop(self)
-    }
 }
