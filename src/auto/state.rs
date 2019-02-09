@@ -149,6 +149,13 @@ impl StateSet {
             StateSet::Set(_) => false,
         }
     }
+
+    pub(crate) fn unwrap_reduced(&self) -> StateId {
+        match self {
+            StateSet::Singleton(id) => *id,
+            StateSet::Set(_) => panic!("not reduced"),
+        }
+    }
 }
 
 impl PartialEq for StateSet {

@@ -83,6 +83,10 @@ impl<C: Constructor> ConstructorSet<C> {
             .all(|con| con.params().all(|(_, ids)| ids.is_reduced()))
     }
 
+    pub(crate) fn get(&self, cpt: C::Component) -> Option<&C> {
+        self.set.as_ref().and_then(|set| set.get(&cpt))
+    }
+
     fn set(&mut self) -> &mut HashMap<C::Component, C, BuildHasherDefault<SeaHasher>> {
         lazy_static! {
             static ref HASHER: HashMap<(), (), BuildHasherDefault<SeaHasher>> = HashMap::default();
