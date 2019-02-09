@@ -5,7 +5,7 @@ use im::Vector;
 
 use crate::auto::{flow, Automaton, StateId, StateSet};
 use crate::polar;
-use crate::{Polarity, TypeSystem, Label};
+use crate::{Label, Polarity, TypeSystem};
 
 pub trait Build<T: TypeSystem, V>: Sized {
     fn map<'a, F>(&'a self, mapper: F) -> T::Constructor
@@ -87,7 +87,13 @@ where
             polar::Ty::Zero => (),
             polar::Ty::Constructed(c) => {
                 let con = c.map(|label, ty| {
-                    StateSet::Singleton(self.build_polar_closure(pol * label.polarity(), false, ty, stack, recs))
+                    StateSet::Singleton(self.build_polar_closure(
+                        pol * label.polarity(),
+                        false,
+                        ty,
+                        stack,
+                        recs,
+                    ))
                 });
                 self.auto.build_constructed_at(pol, at, con);
             }

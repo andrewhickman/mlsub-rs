@@ -41,10 +41,23 @@ impl crate::Constructor for Constructor {
     fn join(&mut self, other: &Self, pol: Polarity) {
         match (self, other) {
             (Constructor::Bool, Constructor::Bool) => (),
-            (Constructor::Fun(..), Constructor::Fun(..)) => (),
+            (Constructor::Fun(ld, lr), Constructor::Fun(rd, rr)) => {
+                ld.union(rd);
+                lr.union(rr);
+            }
             (Constructor::Record(ref mut lhs), Constructor::Record(ref rhs)) => match pol {
-                Polarity::Pos => *lhs = lhs.clone().intersection(rhs.clone()),
-                Polarity::Neg => *lhs = lhs.clone().union(rhs.clone()),
+                Polarity::Pos => {
+                    *lhs = lhs.clone().intersection_with(rhs.clone(), |mut l, r| {
+                        l.union(&r);
+                        l
+                    })
+                }
+                Polarity::Neg => {
+                    *lhs = lhs.clone().union_with(rhs.clone(), |mut l, r| {
+                        l.union(&r);
+                        l
+                    })
+                }
             },
             _ => unreachable!(),
         }
@@ -54,10 +67,13 @@ impl crate::Constructor for Constructor {
         match self {
             Constructor::Bool => vec![],
             Constructor::Fun(d, r) => vec![(Label::Domain, d.clone()), (Label::Range, r.clone())],
-            Constructor::Record(fields) => fields.clone().into_iter().map(|(label, set)| {
-                (Label::Label(label), set)
-            }).collect()
-        }.into_iter()
+            Constructor::Record(fields) => fields
+                .clone()
+                .into_iter()
+                .map(|(label, set)| (Label::Label(label), set))
+                .collect(),
+        }
+        .into_iter()
     }
 
     fn map<F>(self, mut mapper: F) -> Self

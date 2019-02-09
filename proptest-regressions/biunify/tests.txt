@@ -13,3 +13,4 @@ xs 2173858201 3423930559 1314105166 2807280749 # shrinks to lhs = Constructed(Fu
 xs 1508782584 2493953041 3095138704 2996943860 # shrinks to lhs = Recursive(Add(Constructed(Fun(UnboundVar('e'), UnboundVar('e'))), Zero)), rhs = Constructed(Fun(Constructed(Record({})), Constructed(Bool)))
 xs 1653524896 506263226 1711738322 3055187847 # shrinks to lhs = Recursive(Add(UnboundVar('c'), Constructed(Fun(UnboundVar('c'), Zero)))), rhs = Constructed(Fun(Constructed(Bool), Zero))
 xs 3508900513 1570863892 345596072 3524976738 # shrinks to cons = [Constraint(Add(Constructed(Fun(Zero, Zero)), Constructed(Fun(Constructed(Fun(Zero, Zero)), Zero))), Constructed(Fun(Constructed(Bool), Constructed(Bool))))]
+xs 1468091683 3234994215 1406433877 1121789651 # shrinks to cons = [Constraint(Constructed(Fun(Zero, Zero)), Add(Constructed(Fun(Zero, Zero)), Constructed(Fun(Zero, Zero))))]
