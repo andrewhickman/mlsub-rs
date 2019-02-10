@@ -12,15 +12,7 @@ use std::vec;
 use im::OrdMap;
 
 use crate::auto::StateSet;
-use crate::{Polarity, TypeSystem};
-
-#[derive(Debug)]
-pub struct MlSub;
-
-impl TypeSystem for MlSub {
-    type Constructor = Constructor;
-    type Label = Label;
-}
+use crate::Polarity;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Constructor {

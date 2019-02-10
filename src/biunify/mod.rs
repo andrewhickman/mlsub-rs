@@ -10,9 +10,9 @@ use std::iter::once;
 use seahash::SeaHasher;
 
 use crate::auto::{Automaton, StateId};
-use crate::{Label, Polarity, TypeSystem};
+use crate::{Constructor, Label, Polarity};
 
-impl<T: TypeSystem> Automaton<T> {
+impl<C: Constructor> Automaton<C> {
     /// Solves a constraint t⁺ ≤ t⁻ where t⁺ and t⁻ are represented by the states `qp` and `qn`.
     #[must_use]
     pub fn biunify(&mut self, qp: StateId, qn: StateId) -> bool {

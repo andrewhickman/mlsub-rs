@@ -7,9 +7,9 @@ pub(crate) use self::polar::{Build, Builder};
 use std::borrow::Cow;
 
 use crate::auto::{flow, Automaton, State, StateId};
-use crate::{Polarity, TypeSystem};
+use crate::{Polarity, Constructor};
 
-impl<'a, T: TypeSystem> Automaton<T> {
+impl<'a, C: Constructor> Automaton<C> {
     /// Build an empty state, representing the bottom and top types for positive and negative
     /// polarities respectively.
     pub fn build_empty(&mut self, pol: Polarity) -> StateId {
@@ -46,13 +46,13 @@ impl<'a, T: TypeSystem> Automaton<T> {
         pair
     }
 
-    pub fn build_constructed(&mut self, pol: Polarity, con: T::Constructor) -> StateId {
+    pub fn build_constructed(&mut self, pol: Polarity, con: C) -> StateId {
         let at = self.build_empty(pol);
         self.build_constructed_at(pol, at, con);
         at
     }
 
-    fn build_constructed_at(&mut self, pol: Polarity, at: StateId, con: T::Constructor) {
+    fn build_constructed_at(&mut self, pol: Polarity, at: StateId, con: C) {
         self.index_mut(at).cons.add(pol, Cow::Owned(con));
     }
 }

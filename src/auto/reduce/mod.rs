@@ -8,12 +8,12 @@ use std::mem::replace;
 use im::HashSet;
 
 use crate::auto::{Automaton, ConstructorSet, FlowSet, State, StateId, StateRange, StateSet};
-use crate::{Constructor, Label, Polarity, TypeSystem};
+use crate::{Constructor, Label, Polarity};
 
-impl<T: TypeSystem> State<T> {
+impl<C: Constructor> State<C> {
     fn merged<'a, I>(pol: Polarity, it: I) -> Self
     where
-        T: 'a,
+        C: 'a,
         I: IntoIterator<Item = &'a Self>,
     {
         it.into_iter().fold(State::new(pol), |mut l, r| {
@@ -27,7 +27,7 @@ impl<T: TypeSystem> State<T> {
     }
 }
 
-impl<T: TypeSystem> Automaton<T> {
+impl<C: Constructor> Automaton<C> {
     pub fn reduce<I>(&mut self, nfa: &Self, nfa_ids: I) -> StateRange
     where
         I: IntoIterator<Item = (StateId, Polarity)>,

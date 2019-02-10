@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use seahash::SeaHasher;
 
 use crate::auto::{Automaton, StateId};
-use crate::{Polarity, TypeSystem};
+use crate::{Polarity, Constructor};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Pair {
@@ -65,7 +65,7 @@ impl Default for FlowSet {
     }
 }
 
-impl<T: TypeSystem> Automaton<T> {
+impl<C: Constructor> Automaton<C> {
     pub(crate) fn add_flow(&mut self, pair: Pair) {
         #[cfg(debug_assertions)]
         debug_assert_eq!(self.index(pair.pos).pol, Polarity::Pos);

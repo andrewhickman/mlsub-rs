@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
-use super::{Constructor, Label, MlSub};
+use super::{Constructor, Label};
 use crate::auto::{Build, StateSet};
 use crate::polar::Ty;
 
@@ -12,7 +12,7 @@ pub enum Constructed {
     Record(BTreeMap<Rc<str>, Box<Ty<Constructed, char>>>),
 }
 
-impl Build<MlSub, char> for Constructed {
+impl Build<Constructor, char> for Constructed {
     fn map<'a, F>(&'a self, mut mapper: F) -> Constructor
     where
         F: FnMut(Label, &'a Ty<Self, char>) -> StateSet,

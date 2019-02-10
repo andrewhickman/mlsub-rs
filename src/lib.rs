@@ -9,13 +9,9 @@ mod tests;
 
 pub use self::cons::{Constructor, Label};
 
-use std::fmt::Debug;
-use std::ops;
+pub(crate) use self::cons::ConstructorSet;
 
-pub trait TypeSystem {
-    type Constructor: Constructor<Label = Self::Label> + Debug;
-    type Label: Label + Debug;
-}
+use std::ops;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum Polarity {

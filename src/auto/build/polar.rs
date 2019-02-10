@@ -5,26 +5,26 @@ use im::Vector;
 
 use crate::auto::{flow, Automaton, StateId, StateSet};
 use crate::polar;
-use crate::{Label, Polarity, TypeSystem};
+use crate::{Constructor, Label, Polarity};
 
-pub trait Build<T: TypeSystem, V>: Sized {
-    fn map<'a, F>(&'a self, mapper: F) -> T::Constructor
+pub trait Build<C: Constructor, V>: Sized {
+    fn map<'a, F>(&'a self, mapper: F) -> C
     where
         V: 'a,
-        F: FnMut(T::Label, &'a polar::Ty<Self, V>) -> StateSet;
+        F: FnMut(C::Label, &'a polar::Ty<Self, V>) -> StateSet;
 }
 
-pub struct Builder<'a, T, V>
+pub struct Builder<'a, C, V>
 where
-    T: TypeSystem,
+    C: Constructor,
     V: Eq + Hash + Clone,
 {
-    auto: &'a mut Automaton<T>,
+    auto: &'a mut Automaton<C>,
     vars: HashMap<V, flow::Pair>,
 }
 
-impl<'a, T: TypeSystem> Automaton<T> {
-    pub fn builder<V: Eq + Hash + Clone>(&'a mut self) -> Builder<T, V> {
+impl<'a, C: Constructor> Automaton<C> {
+    pub fn builder<V: Eq + Hash + Clone>(&'a mut self) -> Builder<C, V> {
         Builder {
             auto: self,
             vars: HashMap::new(),
@@ -32,14 +32,14 @@ impl<'a, T: TypeSystem> Automaton<T> {
     }
 }
 
-impl<'a, T, V> Builder<'a, T, V>
+impl<'a, C, V> Builder<'a, C, V>
 where
-    T: TypeSystem,
+    C: Constructor,
     V: Eq + Hash + Clone,
 {
-    pub fn build_polar<C>(&mut self, pol: Polarity, ty: &polar::Ty<C, V>) -> StateId
+    pub fn build_polar<B>(&mut self, pol: Polarity, ty: &polar::Ty<B, V>) -> StateId
     where
-        C: Build<T, V>,
+        B: Build<C, V>,
     {
         let at = self.auto.build_empty(pol);
         let mut stack = vec![(pol, at, ty, Vector::new())];
@@ -49,15 +49,15 @@ where
         at
     }
 
-    fn build_polar_closure_at<'b, C>(
+    fn build_polar_closure_at<'b, B>(
         &mut self,
         pol: Polarity,
         at: StateId,
-        ty: &'b polar::Ty<C, V>,
-        stack: &mut Vec<(Polarity, StateId, &'b polar::Ty<C, V>, Vector<StateId>)>,
+        ty: &'b polar::Ty<B, V>,
+        stack: &mut Vec<(Polarity, StateId, &'b polar::Ty<B, V>, Vector<StateId>)>,
         recs: &mut Vector<StateId>,
     ) where
-        C: Build<T, V>,
+        B: Build<C, V>,
     {
         // TODO produce less garbage states
 
@@ -100,16 +100,16 @@ where
         }
     }
 
-    fn build_polar_closure<'b, C>(
+    fn build_polar_closure<'b, B>(
         &mut self,
         pol: Polarity,
         epsilon: bool,
-        ty: &'b polar::Ty<C, V>,
-        stack: &mut Vec<(Polarity, StateId, &'b polar::Ty<C, V>, Vector<StateId>)>,
+        ty: &'b polar::Ty<B, V>,
+        stack: &mut Vec<(Polarity, StateId, &'b polar::Ty<B, V>, Vector<StateId>)>,
         recs: &mut Vector<StateId>,
     ) -> StateId
     where
-        C: Build<T, V>,
+        B: Build<C, V>,
     {
         if let polar::Ty::BoundVar(idx) = *ty {
             recs[idx]

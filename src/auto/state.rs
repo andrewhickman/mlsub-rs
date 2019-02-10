@@ -6,7 +6,7 @@ use im::hashset::{ConsumingIter, HashSet};
 use seahash::SeaHasher;
 
 use crate::auto::{Automaton, ConstructorSet, FlowSet};
-use crate::{Polarity, TypeSystem};
+use crate::{Constructor, Polarity};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct StateId(usize);
@@ -15,10 +15,10 @@ pub struct StateId(usize);
 pub struct StateRange(Range<usize>);
 
 #[derive(Debug)]
-pub(crate) struct State<T: TypeSystem> {
+pub(crate) struct State<C: Constructor> {
     #[cfg(debug_assertions)]
     pub(crate) pol: Polarity,
-    pub(crate) cons: ConstructorSet<T::Constructor>,
+    pub(crate) cons: ConstructorSet<C>,
     pub(crate) flow: FlowSet,
 }
 
@@ -35,7 +35,7 @@ pub enum StateSetIter {
     Set(ConsumingIter<StateId>),
 }
 
-impl<T: TypeSystem> State<T> {
+impl<C: Constructor> State<C> {
     pub(crate) fn new(_pol: Polarity) -> Self {
         State {
             #[cfg(debug_assertions)]
@@ -46,7 +46,7 @@ impl<T: TypeSystem> State<T> {
     }
 }
 
-impl<T: TypeSystem> Clone for State<T> {
+impl<C: Constructor> Clone for State<C> {
     fn clone(&self) -> Self {
         State {
             #[cfg(debug_assertions)]
@@ -57,22 +57,22 @@ impl<T: TypeSystem> Clone for State<T> {
     }
 }
 
-impl<T: TypeSystem> Automaton<T> {
+impl<C: Constructor> Automaton<C> {
     pub(crate) fn next(&mut self) -> StateId {
         StateId(self.states.len())
     }
 
-    pub(crate) fn add(&mut self, state: State<T>) -> StateId {
+    pub(crate) fn add(&mut self, state: State<C>) -> StateId {
         let id = self.next();
         self.states.push(state);
         id
     }
 
-    pub(crate) fn index(&self, StateId(id): StateId) -> &State<T> {
+    pub(crate) fn index(&self, StateId(id): StateId) -> &State<C> {
         &self.states[id]
     }
 
-    pub(crate) fn index_mut(&mut self, StateId(id): StateId) -> &mut State<T> {
+    pub(crate) fn index_mut(&mut self, StateId(id): StateId) -> &mut State<C> {
         &mut self.states[id]
     }
 
@@ -80,7 +80,7 @@ impl<T: TypeSystem> Automaton<T> {
         &mut self,
         StateId(i): StateId,
         StateId(j): StateId,
-    ) -> (&mut State<T>, &mut State<T>) {
+    ) -> (&mut State<C>, &mut State<C>) {
         debug_assert_ne!(i, j);
         if i < j {
             let (l, r) = self.states.split_at_mut(j);
@@ -95,7 +95,7 @@ impl<T: TypeSystem> Automaton<T> {
         StateRange(start..self.states.len())
     }
 
-    pub(crate) fn enumerate(&self) -> impl Iterator<Item = (StateId, &State<T>)> {
+    pub(crate) fn enumerate(&self) -> impl Iterator<Item = (StateId, &State<C>)> {
         self.states
             .iter()
             .enumerate()

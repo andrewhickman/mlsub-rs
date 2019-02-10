@@ -11,16 +11,14 @@ pub(crate) use self::build::{Build, Builder};
 pub(crate) use self::flow::FlowSet;
 pub(crate) use self::state::State;
 
-use crate::cons::ConstructorSet;
-use crate::Polarity;
-use crate::TypeSystem;
+use crate::{Constructor, ConstructorSet, Polarity};
 
 #[derive(Debug)]
-pub struct Automaton<T: TypeSystem> {
-    states: Vec<State<T>>,
+pub struct Automaton<C: Constructor> {
+    states: Vec<State<C>>,
 }
 
-impl<T: TypeSystem> Automaton<T> {
+impl<C: Constructor> Automaton<C> {
     pub fn new() -> Self {
         Automaton { states: Vec::new() }
     }
@@ -45,7 +43,7 @@ impl<T: TypeSystem> Automaton<T> {
     }
 }
 
-impl<T: TypeSystem> Default for Automaton<T> {
+impl<C: Constructor> Default for Automaton<C> {
     fn default() -> Self {
         Automaton::new()
     }

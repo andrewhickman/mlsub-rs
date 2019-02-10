@@ -11,12 +11,12 @@ use proptest::test_runner::TestRunner;
 use proptest::{proptest, proptest_helper};
 use rand::distributions::Exp1;
 
-use super::{Constructed, MlSub};
+use super::{Constructed, Constructor};
 use crate::auto::{Automaton, StateId};
 use crate::polar::Ty;
 use crate::Polarity;
 
-pub fn arb_auto_ty(pol: Polarity) -> BoxedStrategy<(Automaton<MlSub>, StateId)> {
+pub fn arb_auto_ty(pol: Polarity) -> BoxedStrategy<(Automaton<Constructor>, StateId)> {
     arb_polar_ty(pol)
         .prop_map(move |ty| {
             let mut auto = Automaton::new();

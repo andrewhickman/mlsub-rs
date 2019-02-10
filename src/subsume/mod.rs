@@ -5,9 +5,9 @@ use itertools::{merge_join_by, EitherOrBoth};
 use seahash::SeaHasher;
 
 use crate::auto::{flow, Automaton, StateId};
-use crate::{Constructor, TypeSystem};
+use crate::{Constructor};
 
-impl<T: TypeSystem> Automaton<T> {
+impl<C: Constructor> Automaton<C> {
     pub fn subsume(&self, a: StateId, b: StateId) -> Result<(), ()> {
         #[cfg(debug_assertions)]
         debug_assert!(self.is_reduced());
