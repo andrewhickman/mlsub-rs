@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use proptest::collection::vec;
-use proptest::{prop_assert, prop_assert_eq, proptest, proptest_helper};
+use proptest::{prop_assert_eq, proptest};
+use proptest::test_runner::Config;
 
 use crate::auto::Automaton;
 use crate::biunify::reference::{self, arb_constraint};
@@ -30,6 +31,12 @@ fn constructed() {
 }
 
 proptest! {
+    #![proptest_config(Config {
+        cases: 1024,
+        timeout: 10000,
+        ..Config::default()
+    })]
+
     #[test]
     fn biunify(con in arb_constraint()) {
         let mut auto = Automaton::new();
@@ -62,6 +69,14 @@ proptest! {
             reference::biunify(con).is_ok()
         );
     }
+}
+
+proptest! {
+    #![proptest_config(Config {
+        cases: 256,
+        timeout: 10000,
+        ..Config::default()
+    })]
 
     #[test]
     fn biunify_all(cons in vec(arb_constraint(), 0..16)) {

@@ -8,7 +8,7 @@ use proptest::prop_oneof;
 use proptest::strategy::{LazyJust, NewTree, ValueTree};
 use proptest::string::string_regex;
 use proptest::test_runner::TestRunner;
-use proptest::{proptest, proptest_helper};
+use proptest::proptest;
 use rand::distributions::Exp1;
 
 use super::{Constructed, Constructor};
