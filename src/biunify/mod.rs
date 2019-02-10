@@ -15,19 +15,19 @@ use crate::{Constructor, Label, Polarity};
 impl<C: Constructor> Automaton<C> {
     /// Solves a constraint t⁺ ≤ t⁻ where t⁺ and t⁻ are represented by the states `qp` and `qn`.
     #[must_use]
-    pub fn biunify(&mut self, qp: StateId, qn: StateId) -> bool {
+    pub fn biunify(&mut self, qp: StateId, qn: StateId) -> Result<(), ()> {
         self.biunify_all(once((qp, qn)))
     }
 
     #[must_use]
-    pub fn biunify_all<I>(&mut self, constraints: I) -> bool
+    pub fn biunify_all<I>(&mut self, constraints: I) -> Result<(), ()>
     where
         I: IntoIterator<Item = (StateId, StateId)>,
     {
         let mut seen = HashSet::with_capacity_and_hasher(20, Default::default());
         constraints
             .into_iter()
-            .all(|(qp, qn)| self.biunify_impl(&mut seen, qp, qn).is_ok())
+            .try_for_each(|(qp, qn)| self.biunify_impl(&mut seen, qp, qn))
     }
 
     fn biunify_impl(

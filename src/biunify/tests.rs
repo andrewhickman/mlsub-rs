@@ -27,7 +27,7 @@ fn constructed() {
     );
     drop(builder);
 
-    assert!(!auto.biunify(lhs_id, rhs_id));
+    assert!(auto.biunify(lhs_id, rhs_id).is_err());
 }
 
 proptest! {
@@ -47,7 +47,7 @@ proptest! {
         drop(builder);
 
         prop_assert_eq!(
-            auto.biunify(lhs_id, rhs_id),
+            auto.biunify(lhs_id, rhs_id).is_ok(),
             reference::biunify(con).is_ok()
         );
     }
@@ -65,7 +65,7 @@ proptest! {
         let dfa_ids: Vec<_> = reduced.reduce(&auto, [(lhs_id, Polarity::Pos), (rhs_id, Polarity::Neg)].iter().cloned()).collect();
 
         prop_assert_eq!(
-            reduced.biunify(dfa_ids[0], dfa_ids[1]),
+            reduced.biunify(dfa_ids[0], dfa_ids[1]).is_ok(),
             reference::biunify(con).is_ok()
         );
     }
@@ -91,7 +91,7 @@ proptest! {
         drop(builder);
 
         prop_assert_eq!(
-            auto.biunify_all(ids),
+            auto.biunify_all(ids).is_ok(),
             reference::biunify_all(cons).is_ok()
         );
     }
@@ -112,7 +112,7 @@ proptest! {
         let dfa_ids = reduced.reduce(&auto, ids);
 
         prop_assert_eq!(
-            reduced.biunify_all(dfa_ids.tuples()),
+            reduced.biunify_all(dfa_ids.tuples()).is_ok(),
             reference::biunify_all(cons).is_ok()
         );
     }
