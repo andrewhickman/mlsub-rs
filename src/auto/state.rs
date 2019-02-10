@@ -23,9 +23,11 @@ pub(crate) struct State<C: Constructor> {
 }
 
 /// A non-empty set of states, optimized for the common case where only one state is in the set.
-// TODO priv enum
-#[derive(Debug, Clone)]
-pub enum StateSet {
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct StateSet(StateSetData);
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum StateSetData {
     Singleton(StateId),
     Set(HashSet<StateId, BuildHasherDefault<SeaHasher>>),
 }
@@ -112,62 +114,58 @@ impl Iterator for StateRange {
 }
 
 impl StateSet {
+    pub fn new(id: StateId) -> Self {
+        StateSet(StateSetData::Singleton(id))
+    }
+
     pub fn insert(&mut self, id: StateId) -> bool {
         self.to_set().insert(id).is_some()
     }
 
     pub fn union(&mut self, other: &Self) {
-        match other {
-            StateSet::Singleton(id) => {
+        match &other.0 {
+            StateSetData::Singleton(id) => {
                 self.insert(*id);
             }
-            StateSet::Set(set) => self.to_set().extend(set.iter().cloned()),
+            StateSetData::Set(set) => {
+                debug_assert!(set.len() > 1);
+                self.to_set().extend(set.iter().cloned())
+            },
         }
     }
 
     pub fn iter(&self) -> StateSetIter {
-        match self {
-            StateSet::Singleton(id) => StateSetIter::Singleton(once(*id)),
-            StateSet::Set(set) => StateSetIter::Set(set.clone().into_iter()),
+        match &self.0 {
+            StateSetData::Singleton(id) => StateSetIter::Singleton(once(*id)),
+            StateSetData::Set(set) => StateSetIter::Set(set.clone().into_iter()),
         }
     }
 
-    pub fn to_set(&mut self) -> &mut HashSet<StateId, BuildHasherDefault<SeaHasher>> {
-        if let StateSet::Singleton(id) = *self {
-            *self = StateSet::Set(HashSet::default().update(id));
+    fn to_set(&mut self) -> &mut HashSet<StateId, BuildHasherDefault<SeaHasher>> {
+        if let StateSetData::Singleton(id) = self.0 {
+            self.0 = StateSetData::Set(HashSet::default().update(id));
         }
-        match self {
-            StateSet::Set(set) => set,
-            StateSet::Singleton(_) => unreachable!(),
+        match &mut self.0 {
+            StateSetData::Set(set) => set,
+            StateSetData::Singleton(_) => unreachable!(),
         }
     }
 
     #[cfg(debug_assertions)]
     pub(crate) fn is_reduced(&self) -> bool {
-        match self {
-            StateSet::Singleton(_) => true,
-            StateSet::Set(_) => false,
+        match self.0 {
+            StateSetData::Singleton(_) => true,
+            StateSetData::Set(_) => false,
         }
     }
 
     pub(crate) fn unwrap_reduced(&self) -> StateId {
-        match self {
-            StateSet::Singleton(id) => *id,
-            StateSet::Set(_) => panic!("not reduced"),
+        match self.0 {
+            StateSetData::Singleton(id) => id,
+            StateSetData::Set(_) => panic!("not reduced"),
         }
     }
 }
-
-impl PartialEq for StateSet {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (StateSet::Set(lhs), StateSet::Set(rhs)) => lhs == rhs,
-            _ => self.iter().eq(other.iter()),
-        }
-    }
-}
-
-impl Eq for StateSet {}
 
 impl IntoIterator for StateSet {
     type IntoIter = StateSetIter;

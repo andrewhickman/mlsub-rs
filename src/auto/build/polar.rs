@@ -87,7 +87,7 @@ where
             polar::Ty::Zero => (),
             polar::Ty::Constructed(c) => {
                 let con = c.map(|label, ty| {
-                    StateSet::Singleton(self.build_polar_closure(
+                    StateSet::new(self.build_polar_closure(
                         pol * label.polarity(),
                         false,
                         ty,

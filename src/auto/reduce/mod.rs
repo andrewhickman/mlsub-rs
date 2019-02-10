@@ -66,14 +66,14 @@ impl<C: Constructor> Automaton<C> {
                     ids.sort();
 
                     if let Some(&b) = map.ns2d.get(&ids) {
-                        StateSet::Singleton(b)
+                        StateSet::new(b)
                     } else {
                         let b_pol = a_pol * label.polarity();
                         let state = State::merged(b_pol, ids.iter().map(|&id| nfa.index(id)));
                         let b = self.add(state);
                         map.insert(ids, b);
                         stack.push((b, b_pol));
-                        StateSet::Singleton(b)
+                        StateSet::new(b)
                     }
                 });
 
