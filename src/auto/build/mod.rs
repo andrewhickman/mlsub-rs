@@ -50,6 +50,6 @@ impl<'a, C: Constructor> Automaton<C> {
     }
 
     fn build_constructed_at(&mut self, pol: Polarity, at: StateId, con: C) {
-        self.index_mut(at).cons.add(pol, Cow::Owned(con));
+        self[at].cons.add(pol, Cow::Owned(con));
     }
 }

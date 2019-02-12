@@ -62,7 +62,7 @@ where
         // TODO produce less garbage states
 
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.auto.index(at).pol, pol);
+        debug_assert_eq!(self.auto[at].pol, pol);
 
         match ty {
             polar::Ty::Recursive(inner) => {

@@ -43,9 +43,9 @@ impl<C: Constructor> Automaton<C> {
             .into_iter()
             .map(|(nfa_id, pol)| {
                 #[cfg(debug_assertions)]
-                debug_assert_eq!(nfa.index(nfa_id).pol, pol);
+                debug_assert_eq!(nfa[nfa_id].pol, pol);
 
-                let dfa_id = self.add(nfa.index(nfa_id).clone());
+                let dfa_id = self.add(nfa[nfa_id].clone());
                 map.insert(vec![nfa_id], dfa_id);
                 (dfa_id, pol)
             })
@@ -57,7 +57,7 @@ impl<C: Constructor> Automaton<C> {
         // Walk transitions and convert to dfa ids.
         while let Some((a, a_pol)) = stack.pop() {
             // Remove old nfa ids
-            let nfa_cons = replace(&mut self.index_mut(a).cons, ConstructorSet::default());
+            let nfa_cons = replace(&mut self[a].cons, ConstructorSet::default());
 
             let mut dfa_cons = ConstructorSet::default();
             for nfa_con in &nfa_cons {
@@ -69,7 +69,7 @@ impl<C: Constructor> Automaton<C> {
                         StateSet::new(b)
                     } else {
                         let b_pol = a_pol * label.polarity();
-                        let state = State::merged(b_pol, ids.iter().map(|&id| nfa.index(id)));
+                        let state = State::merged(b_pol, ids.iter().map(|&id| &nfa[id]));
                         let b = self.add(state);
                         map.insert(ids, b);
                         stack.push((b, b_pol));
@@ -81,13 +81,13 @@ impl<C: Constructor> Automaton<C> {
             }
 
             // Replace with dfa ids
-            replace(&mut self.index_mut(a).cons, dfa_cons);
+            replace(&mut self[a].cons, dfa_cons);
         }
 
         // Populate flow
         for &a in map.ns2d.values() {
             // Remove old nfa ids
-            let nfa_flow = replace(&mut self.index_mut(a).flow, FlowSet::default());
+            let nfa_flow = replace(&mut self[a].flow, FlowSet::default());
 
             let dfa_flow = FlowSet::from_iter(
                 nfa_flow
@@ -97,7 +97,7 @@ impl<C: Constructor> Automaton<C> {
             );
 
             // Replace with dfa ids
-            replace(&mut self.index_mut(a).flow, dfa_flow);
+            replace(&mut self[a].flow, dfa_flow);
         }
 
         #[cfg(debug_assertions)]

@@ -2,7 +2,7 @@ mod set;
 
 pub use self::set::{StateSet, StateSetIter};
 
-use std::ops::Range;
+use std::ops::{Range, Index, IndexMut};
 
 use crate::auto::{Automaton, ConstructorSet, FlowSet};
 use crate::{Constructor, Polarity};
@@ -54,14 +54,6 @@ impl<C: Constructor> Automaton<C> {
         id
     }
 
-    pub(crate) fn index(&self, StateId(id): StateId) -> &State<C> {
-        &self.states[id]
-    }
-
-    pub(crate) fn index_mut(&mut self, StateId(id): StateId) -> &mut State<C> {
-        &mut self.states[id]
-    }
-
     pub(crate) fn index_mut2(
         &mut self,
         StateId(i): StateId,
@@ -86,6 +78,20 @@ impl<C: Constructor> Automaton<C> {
             .iter()
             .enumerate()
             .map(|(id, st)| (StateId(id), st))
+    }
+}
+
+impl<C: Constructor> Index<StateId> for Automaton<C> {
+    type Output = State<C>;
+
+    fn index(&self, StateId(id): StateId) -> &Self::Output {
+        self.states.index(id)
+    }
+}
+
+impl<C: Constructor> IndexMut<StateId> for Automaton<C> {
+    fn index_mut(&mut self, StateId(id): StateId) -> &mut Self::Output {
+        self.states.index_mut(id)
     }
 }
 

@@ -37,22 +37,22 @@ impl<C: Constructor> Automaton<C> {
         qn: StateId,
     ) -> Result<(), ()> {
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(qp).pol, Polarity::Pos);
+        debug_assert_eq!(self[qp].pol, Polarity::Pos);
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(qn).pol, Polarity::Neg);
+        debug_assert_eq!(self[qn].pol, Polarity::Neg);
 
         if seen.insert((qp, qn)) {
-            if !product(&self.index(qp).cons, &self.index(qn).cons).all(|(l, r)| l <= r) {
+            if !product(&self[qp].cons, &self[qn].cons).all(|(l, r)| l <= r) {
                 return Err(());
             }
-            for to in self.index(qn).flow.iter() {
+            for to in self[qn].flow.iter() {
                 self.merge(Polarity::Pos, to, qp);
             }
-            for from in self.index(qp).flow.iter() {
+            for from in self[qp].flow.iter() {
                 self.merge(Polarity::Neg, from, qn);
             }
-            let jps = self.index(qp).cons.clone();
-            let jns = self.index(qn).cons.clone();
+            let jps = self[qp].cons.clone();
+            let jns = self[qn].cons.clone();
             for (label, l, r) in jps.intersection(jns) {
                 let (ps, ns) = label.polarity().flip(l, r);
                 for (jp, jn) in product(ps, ns) {

@@ -68,29 +68,29 @@ impl Default for FlowSet {
 impl<C: Constructor> Automaton<C> {
     pub(crate) fn add_flow(&mut self, pair: Pair) {
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(pair.pos).pol, Polarity::Pos);
+        debug_assert_eq!(self[pair.pos].pol, Polarity::Pos);
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(pair.neg).pol, Polarity::Neg);
+        debug_assert_eq!(self[pair.neg].pol, Polarity::Neg);
 
-        let had_p = self.index_mut(pair.pos).flow.set.insert(pair.neg).is_some();
-        let had_n = self.index_mut(pair.neg).flow.set.insert(pair.pos).is_some();
+        let had_p = self[pair.pos].flow.set.insert(pair.neg).is_some();
+        let had_n = self[pair.neg].flow.set.insert(pair.pos).is_some();
         debug_assert_eq!(had_p, had_n);
     }
 
     pub(crate) fn remove_flow(&mut self, pair: Pair) {
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(pair.pos).pol, Polarity::Pos);
+        debug_assert_eq!(self[pair.pos].pol, Polarity::Pos);
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(pair.neg).pol, Polarity::Neg);
+        debug_assert_eq!(self[pair.neg].pol, Polarity::Neg);
 
         let had_p = self
-            .index_mut(pair.pos)
+            [pair.pos]
             .flow
             .set
             .remove(&pair.neg)
             .is_some();
         let had_n = self
-            .index_mut(pair.neg)
+            [pair.neg]
             .flow
             .set
             .remove(&pair.pos)
@@ -100,20 +100,20 @@ impl<C: Constructor> Automaton<C> {
 
     pub(crate) fn has_flow(&self, pair: Pair) -> bool {
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(pair.pos).pol, Polarity::Pos);
+        debug_assert_eq!(self[pair.pos].pol, Polarity::Pos);
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(pair.neg).pol, Polarity::Neg);
+        debug_assert_eq!(self[pair.neg].pol, Polarity::Neg);
 
-        self.index(pair.neg).flow.set.contains(&pair.pos)
+        self[pair.neg].flow.set.contains(&pair.pos)
     }
 
     pub(crate) fn merge_flow(&mut self, pol: Polarity, a: StateId, source: StateId) {
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(a).pol, pol);
+        debug_assert_eq!(self[a].pol, pol);
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(source).pol, pol);
+        debug_assert_eq!(self[source].pol, pol);
 
-        for b in self.index(source).flow.iter() {
+        for b in self[source].flow.iter() {
             self.add_flow(Pair::from_pol(pol, a, b));
         }
     }
@@ -123,7 +123,7 @@ impl<C: Constructor> Automaton<C> {
         self.enumerate().all(|(from, st)| {
             st.flow
                 .iter()
-                .all(|to| self.index(to).pol != st.pol && self.index(to).flow.set.contains(&from))
+                .all(|to| self[to].pol != st.pol && self[to].flow.set.contains(&from))
         })
     }
 }

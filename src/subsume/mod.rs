@@ -23,11 +23,11 @@ impl<C: Constructor> Automaton<C> {
         b: StateId,
     ) -> Result<(), ()> {
         #[cfg(debug_assertions)]
-        debug_assert_eq!(self.index(a).pol, self.index(b).pol);
+        debug_assert_eq!(self[a].pol, self[b].pol);
 
         if seen.insert((a, b)) {
-            for lcon in &self.index(a).cons {
-                let rcon = match self.index(b).cons.get(lcon.component()) {
+            for lcon in &self[a].cons {
+                let rcon = match self[b].cons.get(lcon.component()) {
                     Some(rcon) if lcon <= rcon => rcon,
                     _ => return Err(()),
                 };
