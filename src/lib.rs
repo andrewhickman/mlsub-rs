@@ -1,11 +1,12 @@
 pub mod auto;
-pub mod polar;
 
 mod biunify;
 mod cons;
 mod subsume;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod polar;
 
 pub use self::cons::{Constructor, Label};
 
