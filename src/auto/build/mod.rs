@@ -1,8 +1,5 @@
 #[cfg(test)]
-mod polar;
-
-#[cfg(test)]
-pub(crate) use self::polar::{Build, Builder};
+pub(crate) mod polar;
 
 use std::borrow::Cow;
 

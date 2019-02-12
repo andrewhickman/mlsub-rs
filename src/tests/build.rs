@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 use std::rc::Rc;
 
 use super::{Constructor, Label};
-use crate::auto::{Build, StateSet};
+use crate::auto::StateSet;
+use crate::auto::build::polar::Build;
 use crate::polar::Ty;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

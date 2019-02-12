@@ -1,15 +1,13 @@
 pub mod flow;
+pub mod state;
 
-mod build;
+pub(crate) mod build;
+
 mod reduce;
-mod state;
 
-pub use self::state::{StateId, StateRange, StateSet, StateSetIter};
+pub use self::state::{StateId, StateSet, State, StateRange};
 
-#[cfg(test)]
-pub(crate) use self::build::{Build, Builder};
 pub(crate) use self::flow::FlowSet;
-pub(crate) use self::state::State;
 
 use crate::{Constructor, ConstructorSet, Polarity};
 
