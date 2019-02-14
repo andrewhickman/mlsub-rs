@@ -1,16 +1,14 @@
 pub mod auto;
+pub mod cons;
 
 mod biunify;
-mod cons;
 mod subsume;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod polar;
 
-pub use self::cons::{Constructor, Label};
-
-pub(crate) use self::cons::ConstructorSet;
+pub use self::cons::{Constructor, Label, ConstructorSet};
 
 use std::ops;
 

@@ -30,6 +30,10 @@ impl<C: Constructor> State<C> {
             flow: FlowSet::default(),
         }
     }
+
+    pub fn constructors(&self) -> &ConstructorSet<C> {
+        &self.cons
+    }
 }
 
 impl<C: Constructor> Clone for State<C> {

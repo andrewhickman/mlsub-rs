@@ -33,11 +33,17 @@ pub trait Label: Clone + Ord {
 }
 
 #[derive(Clone)]
-pub(crate) struct ConstructorSet<C: Constructor> {
+pub struct ConstructorSet<C: Constructor> {
     set: Option<HashMap<C::Component, C, BuildHasherDefault<SeaHasher>>>,
 }
 
+pub struct Iter<'a, C: Constructor>(Flatten<option::IntoIter<Values<'a, C::Component, C>>>);
+
 impl<C: Constructor> ConstructorSet<C> {
+    pub fn iter(&self) -> Iter<'_, C> {
+        Iter(self.set.as_ref().map(HashMap::values).into_iter().flatten())
+    }
+
     pub(crate) fn add(&mut self, pol: Polarity, con: Cow<C>) {
         match self.set().entry(con.component()) {
             Entry::Occupied(mut entry) => entry.get_mut().join(&con, pol),
@@ -108,11 +114,19 @@ impl<C: Constructor> Default for ConstructorSet<C> {
     }
 }
 
+impl<'a, C: Constructor> Iterator for Iter<'a, C> {
+    type Item = &'a C;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
 impl<'a, C: Constructor> IntoIterator for &'a ConstructorSet<C> {
     type Item = &'a C;
-    type IntoIter = Flatten<option::IntoIter<Values<'a, C::Component, C>>>;
+    type IntoIter = Iter<'a, C>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.set.as_ref().map(HashMap::values).into_iter().flatten()
+        self.iter()
     }
 }
