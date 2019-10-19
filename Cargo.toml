@@ -10,7 +10,7 @@ readme = "README.md"
 edition = "2018"
 
 [dependencies]
-im = "12.3.0"
+im = "13"
 seahash = "3.0.5"
 itertools = "0.8.0"
 lazy_static = "1.2.0"
