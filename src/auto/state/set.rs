@@ -36,7 +36,7 @@ impl StateSet {
                 self.insert(*id);
             }
             StateSetData::Set(set) => {
-                debug_assert!(set.len() > 1);
+                debug_assert!(set.len() > 0);
                 self.to_set().extend(set.iter().cloned())
             },
         }
