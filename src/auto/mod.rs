@@ -5,20 +5,29 @@ pub(crate) mod build;
 
 mod reduce;
 
-pub use self::state::{StateId, StateSet, State, StateRange};
+pub use self::state::{State, StateId, StateRange, StateSet};
 
 pub(crate) use self::flow::FlowSet;
+
+use std::collections::HashSet;
+use std::hash::BuildHasherDefault;
+
+use seahash::SeaHasher;
 
 use crate::{Constructor, ConstructorSet, Polarity};
 
 #[derive(Debug)]
 pub struct Automaton<C: Constructor> {
     states: Vec<State<C>>,
+    pub(crate) biunify_cache: HashSet<(StateId, StateId), BuildHasherDefault<SeaHasher>>,
 }
 
 impl<C: Constructor> Automaton<C> {
     pub fn new() -> Self {
-        Automaton { states: Vec::new() }
+        Automaton {
+            states: Vec::new(),
+            biunify_cache: HashSet::default(),
+        }
     }
 
     #[cfg(debug_assertions)]

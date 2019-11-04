@@ -3,45 +3,27 @@ mod reference;
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashSet;
-use std::hash::BuildHasherDefault;
-use std::iter::once;
-
-use seahash::SeaHasher;
-
 use crate::auto::{Automaton, StateId};
 use crate::{Constructor, Label, Polarity};
 
 impl<C: Constructor> Automaton<C> {
-    /// Solves a constraint t⁺ ≤ t⁻ where t⁺ and t⁻ are represented by the states `qp` and `qn`.
-    #[must_use]
-    pub fn biunify(&mut self, qp: StateId, qn: StateId) -> Result<(), ()> {
-        self.biunify_all(once((qp, qn)))
-    }
-
-    #[must_use]
     pub fn biunify_all<I>(&mut self, constraints: I) -> Result<(), ()>
     where
         I: IntoIterator<Item = (StateId, StateId)>,
     {
-        let mut seen = HashSet::with_capacity_and_hasher(20, Default::default());
         constraints
             .into_iter()
-            .try_for_each(|(qp, qn)| self.biunify_impl(&mut seen, qp, qn))
+            .try_for_each(|(qp, qn)| self.biunify(qp, qn))
     }
 
-    fn biunify_impl(
-        &mut self,
-        seen: &mut HashSet<(StateId, StateId), BuildHasherDefault<SeaHasher>>,
-        qp: StateId,
-        qn: StateId,
-    ) -> Result<(), ()> {
+    /// Solves a constraint t⁺ ≤ t⁻ where t⁺ and t⁻ are represented by the states `qp` and `qn`.
+    pub fn biunify(&mut self, qp: StateId, qn: StateId) -> Result<(), ()> {
         #[cfg(debug_assertions)]
         debug_assert_eq!(self[qp].pol, Polarity::Pos);
         #[cfg(debug_assertions)]
         debug_assert_eq!(self[qn].pol, Polarity::Neg);
 
-        if seen.insert((qp, qn)) {
+        if self.biunify_cache.insert((qp, qn)) {
             if !product(&self[qp].cons, &self[qn].cons).all(|(l, r)| l <= r) {
                 return Err(());
             }
@@ -56,7 +38,7 @@ impl<C: Constructor> Automaton<C> {
             for (label, l, r) in jps.intersection(jns) {
                 let (ps, ns) = label.polarity().flip(l, r);
                 for (jp, jn) in product(ps, ns) {
-                    self.biunify_impl(seen, jp, jn)?;
+                    self.biunify(jp, jn)?;
                 }
             }
         }
