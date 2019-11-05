@@ -2,13 +2,14 @@ pub mod auto;
 pub mod cons;
 
 mod biunify;
+#[cfg(test)]
+mod polar;
 mod subsume;
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
-mod polar;
 
-pub use self::cons::{Constructor, Label, ConstructorSet};
+pub use self::biunify::{Error as BiunifyError, Result as BiunifyResult};
+pub use self::cons::{Constructor, ConstructorSet, Label};
 
 use std::ops;
 
