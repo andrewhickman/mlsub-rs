@@ -5,13 +5,14 @@ mod tests;
 
 use crate::auto::{Automaton, StateId};
 use crate::{Constructor, ConstructorSet, Label, Polarity};
+use itertools::{merge_join_by, EitherOrBoth};
 
 pub type Result<C> = std::result::Result<(), Error<C>>;
 
 #[derive(Debug)]
 pub struct Error<C: Constructor> {
-    pub stack: Vec<(C::Label, ConstructorSet<C>, ConstructorSet<C>)>,
-    pub constraint: (ConstructorSet<C>, ConstructorSet<C>),
+    pub stack: Vec<(C::Label, C, C)>,
+    pub constraint: (C, C),
 }
 
 impl<C: Constructor> Automaton<C> {
@@ -32,8 +33,10 @@ impl<C: Constructor> Automaton<C> {
         debug_assert_eq!(self[qn].pol, Polarity::Neg);
 
         if self.biunify_cache.insert((qp, qn)) {
-            if !product(&self[qp].cons, &self[qn].cons).all(|(l, r)| l <= r) {
-                return Err(Error::new(self, qp, qn));
+            for (cp, cn) in product(&self[qp].cons, &self[qn].cons) {
+                if !(cp <= cn) {
+                    return Err(Error::new(cp.clone(), cn.clone()));
+                }
             }
             for to in self[qn].flow.iter() {
                 self.merge(Polarity::Pos, to, qp);
@@ -41,13 +44,22 @@ impl<C: Constructor> Automaton<C> {
             for from in self[qp].flow.iter() {
                 self.merge(Polarity::Neg, from, qn);
             }
-            let jps = self[qp].cons.clone();
-            let jns = self[qn].cons.clone();
-            for (label, l, r) in jps.intersection(jns) {
-                let (ps, ns) = label.polarity().flip(l, r);
-                for (jp, jn) in product(ps, ns) {
-                    if let Err(err) = self.biunify(jp, jn) {
-                        return Err(err.with(self, label, qp, qn));
+            let cps = self[qp].cons.clone();
+            let cns = self[qn].cons.clone();
+            for (cp, cn) in cps.intersection(cns) {
+                for (label, l, r) in
+                    merge_join_by(cp.params(), cn.params(), |l, r| Ord::cmp(&l.0, &r.0))
+                        .flat_map(|eob| match eob {
+                            EitherOrBoth::Both(lc, rc) => Some((lc.0, lc.1, rc.1)),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                {
+                    let (ps, ns) = label.polarity().flip(l, r);
+                    for (jp, jn) in product(ps, ns) {
+                        if let Err(err) = self.biunify(jp, jn) {
+                            return Err(err.with(label, cp, cn));
+                        }
                     }
                 }
             }
@@ -68,16 +80,15 @@ where
 }
 
 impl<C: Constructor> Error<C> {
-    fn new(auto: &Automaton<C>, qp: StateId, qn: StateId) -> Self {
+    fn new(cp: C, cn: C) -> Self {
         Error {
             stack: vec![],
-            constraint: (auto[qp].cons.clone(), auto[qn].cons.clone()),
+            constraint: (cp, cn),
         }
     }
 
-    fn with(mut self, auto: &Automaton<C>, label: C::Label, qp: StateId, qn: StateId) -> Self {
-        self.stack
-            .push((label, auto[qp].cons.clone(), auto[qn].cons.clone()));
+    fn with(mut self, label: C::Label, cp: C, cn: C) -> Self {
+        self.stack.push((label, cp, cn));
         self
     }
 }

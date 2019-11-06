@@ -4,7 +4,6 @@ use std::iter::Flatten;
 use std::{fmt, option};
 
 use im::hashmap::{Entry, HashMap, Values};
-use itertools::{merge_join_by, EitherOrBoth};
 use lazy_static::lazy_static;
 use seahash::SeaHasher;
 
@@ -53,28 +52,18 @@ impl<C: Constructor> ConstructorSet<C> {
         }
     }
 
-    pub(crate) fn intersection(
-        self,
-        other: Self,
-    ) -> impl Iterator<Item = (C::Label, StateSet, StateSet)> {
+    pub(crate) fn intersection(self, other: Self) -> impl Iterator<Item = (C, C)> {
         // TODO horrible
         match (self.set, other.set) {
             (Some(lhs), Some(rhs)) => Some(
-                lhs.intersection_with(rhs, |lc, rc| {
-                    merge_join_by(lc.params(), rc.params(), |l, r| Ord::cmp(&l.0, &r.0))
-                        .flat_map(|eob| match eob {
-                            EitherOrBoth::Both(lc, rc) => Some((lc.0, lc.1, rc.1)),
-                            _ => None,
-                        })
-                        .collect::<Vec<_>>()
-                })
-                .into_iter()
-                .flat_map(|(_, v)| v),
-            )
-            .into_iter()
-            .flatten(),
-            _ => None.into_iter().flatten(),
+                lhs.intersection_with(rhs, |l, r| (l, r))
+                    .into_iter()
+                    .map(|(_, v)| v),
+            ),
+            _ => None,
         }
+        .into_iter()
+        .flatten()
     }
 
     pub(crate) fn merge(&mut self, other: &Self, pol: Polarity) {
