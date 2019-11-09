@@ -11,6 +11,7 @@ pub(crate) use self::flow::FlowSet;
 
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
+use std::iter::once;
 
 use seahash::SeaHasher;
 
@@ -28,6 +29,19 @@ impl<C: Constructor> Automaton<C> {
             states: Vec::new(),
             biunify_cache: HashSet::default(),
         }
+    }
+
+    pub fn clone_state(&mut self, pol: Polarity, id: StateId) -> StateId {
+        let mut reduced = Automaton::new();
+        reduced.reduce(&self, once((id, pol)));
+
+        let id = self.next();
+        self.append(&mut reduced);
+
+        #[cfg(debug_assertions)]
+        debug_assert!(self.check_flow());
+
+        id
     }
 
     #[cfg(debug_assertions)]

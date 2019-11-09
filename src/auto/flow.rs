@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use seahash::SeaHasher;
 
 use crate::auto::{Automaton, StateId};
-use crate::{Polarity, Constructor};
+use crate::{Constructor, Polarity};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Pair {
@@ -48,6 +48,10 @@ impl FlowSet {
         }
     }
 
+    pub(crate) fn shift(self, offset: usize) -> Self {
+        FlowSet::from_iter(self.set.into_iter().map(|id| id.shift(offset)))
+    }
+
     pub(in crate::auto) fn union(&mut self, other: &Self) {
         self.set.extend(other.iter());
     }
@@ -83,18 +87,8 @@ impl<C: Constructor> Automaton<C> {
         #[cfg(debug_assertions)]
         debug_assert_eq!(self[pair.neg].pol, Polarity::Neg);
 
-        let had_p = self
-            [pair.pos]
-            .flow
-            .set
-            .remove(&pair.neg)
-            .is_some();
-        let had_n = self
-            [pair.neg]
-            .flow
-            .set
-            .remove(&pair.pos)
-            .is_some();
+        let had_p = self[pair.pos].flow.set.remove(&pair.neg).is_some();
+        let had_n = self[pair.neg].flow.set.remove(&pair.pos).is_some();
         debug_assert_eq!(had_p, had_n);
     }
 

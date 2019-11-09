@@ -38,7 +38,7 @@ impl StateSet {
             StateSetData::Set(set) => {
                 debug_assert!(set.len() > 0);
                 self.to_set().extend(set.iter().cloned())
-            },
+            }
         }
     }
 
@@ -47,6 +47,16 @@ impl StateSet {
             StateSetData::Singleton(id) => StateSetIter::Singleton(once(*id)),
             StateSetData::Set(set) => StateSetIter::Set(set.clone().into_iter()),
         }
+    }
+
+    pub(crate) fn shift(self, offset: usize) -> Self {
+        let data = match self.0 {
+            StateSetData::Singleton(id) => StateSetData::Singleton(id.shift(offset)),
+            StateSetData::Set(set) => {
+                StateSetData::Set(set.into_iter().map(|id| id.shift(offset)).collect())
+            }
+        };
+        StateSet(data)
     }
 
     fn to_set(&mut self) -> &mut HashSet<StateId, BuildHasherDefault<SeaHasher>> {

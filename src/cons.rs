@@ -82,6 +82,15 @@ impl<C: Constructor> ConstructorSet<C> {
         self.set.as_ref().and_then(|set| set.get(&cpt))
     }
 
+    pub(crate) fn shift(self, offset: usize) -> Self {
+        let set = self.set.map(|set| {
+            set.into_iter()
+                .map(|(component, con)| (component, con.map(|_, set| set.shift(offset))))
+                .collect()
+        });
+        ConstructorSet { set }
+    }
+
     fn set(&mut self) -> &mut HashMap<C::Component, C, BuildHasherDefault<SeaHasher>> {
         lazy_static! {
             static ref HASHER: HashMap<(), (), BuildHasherDefault<SeaHasher>> = HashMap::default();

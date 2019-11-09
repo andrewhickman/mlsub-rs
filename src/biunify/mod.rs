@@ -4,7 +4,7 @@ mod reference;
 mod tests;
 
 use crate::auto::{Automaton, StateId};
-use crate::{Constructor, ConstructorSet, Label, Polarity};
+use crate::{Constructor, Label, Polarity};
 use itertools::{merge_join_by, EitherOrBoth};
 
 pub type Result<C> = std::result::Result<(), Error<C>>;
