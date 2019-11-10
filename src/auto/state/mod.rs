@@ -22,7 +22,7 @@ pub struct StateId(usize);
 pub struct StateRange(Range<usize>);
 
 impl StateId {
-    pub(crate) fn shift(self, offset: usize) -> Self {
+    pub fn shift(self, offset: usize) -> Self {
         StateId(self.0 + offset)
     }
 }
@@ -73,10 +73,15 @@ impl<C: Constructor> Automaton<C> {
         id
     }
 
-    pub(crate) fn append(&mut self, other: &mut Self) -> usize {
+    pub fn add_from(&mut self, other: &Self) -> usize {
         let offset = self.states.len();
-        self.states
-            .extend(other.states.drain(..).map(|state| state.shift(offset)));
+        self.states.extend(
+            other
+                .states
+                .iter()
+                .cloned()
+                .map(|state| state.shift(offset)),
+        );
         offset
     }
 
@@ -122,7 +127,7 @@ impl<C: Constructor> IndexMut<StateId> for Automaton<C> {
 }
 
 impl StateRange {
-    pub(crate) fn shift(self, offset: usize) -> Self {
+    pub fn shift(self, offset: usize) -> Self {
         StateRange((self.0.start + offset)..(self.0.end + offset))
     }
 }

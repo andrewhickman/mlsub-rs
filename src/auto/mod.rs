@@ -37,7 +37,7 @@ impl<C: Constructor> Automaton<C> {
         let mut reduced = Automaton::new();
         let range = reduced.reduce(&self, states);
 
-        let offset = self.append(&mut reduced);
+        let offset = self.add_from(&reduced);
 
         #[cfg(debug_assertions)]
         debug_assert!(self.check_flow());
