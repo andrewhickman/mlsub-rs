@@ -11,7 +11,6 @@ pub(crate) use self::flow::FlowSet;
 
 use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
-use std::iter::once;
 
 use seahash::SeaHasher;
 
@@ -31,17 +30,19 @@ impl<C: Constructor> Automaton<C> {
         }
     }
 
-    pub fn clone_state(&mut self, pol: Polarity, id: StateId) -> StateId {
+    pub fn clone_states<I>(&mut self, states: I) -> StateRange
+    where
+        I: IntoIterator<Item = (StateId, Polarity)>,
+    {
         let mut reduced = Automaton::new();
-        reduced.reduce(&self, once((id, pol)));
+        let range = reduced.reduce(&self, states);
 
-        let id = self.next();
-        self.append(&mut reduced);
+        let offset = self.append(&mut reduced);
 
         #[cfg(debug_assertions)]
         debug_assert!(self.check_flow());
 
-        id
+        range.shift(offset)
     }
 
     #[cfg(debug_assertions)]

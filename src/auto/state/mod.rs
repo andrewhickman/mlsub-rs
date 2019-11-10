@@ -73,10 +73,11 @@ impl<C: Constructor> Automaton<C> {
         id
     }
 
-    pub(crate) fn append(&mut self, other: &mut Self) {
+    pub(crate) fn append(&mut self, other: &mut Self) -> usize {
         let offset = self.states.len();
         self.states
-            .extend(other.states.drain(..).map(|state| state.shift(offset)))
+            .extend(other.states.drain(..).map(|state| state.shift(offset)));
+        offset
     }
 
     pub(crate) fn index_mut2(
@@ -117,6 +118,12 @@ impl<C: Constructor> Index<StateId> for Automaton<C> {
 impl<C: Constructor> IndexMut<StateId> for Automaton<C> {
     fn index_mut(&mut self, StateId(id): StateId) -> &mut Self::Output {
         self.states.index_mut(id)
+    }
+}
+
+impl StateRange {
+    pub(crate) fn shift(self, offset: usize) -> Self {
+        StateRange((self.0.start + offset)..(self.0.end + offset))
     }
 }
 
