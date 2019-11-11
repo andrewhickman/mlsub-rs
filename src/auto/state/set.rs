@@ -71,17 +71,14 @@ impl StateSet {
 
     #[cfg(debug_assertions)]
     pub(crate) fn is_reduced(&self) -> bool {
-        match self.0 {
+        match &self.0 {
             StateSetData::Singleton(_) => true,
-            StateSetData::Set(_) => false,
+            StateSetData::Set(set) => set.len() == 1,
         }
     }
 
     pub(crate) fn unwrap_reduced(&self) -> StateId {
-        match self.0 {
-            StateSetData::Singleton(id) => id,
-            StateSetData::Set(_) => panic!("not reduced"),
-        }
+        self.iter().next().unwrap()
     }
 }
 
