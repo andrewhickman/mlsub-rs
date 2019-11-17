@@ -25,8 +25,7 @@ impl Pair {
         Pair { pos, neg }
     }
 
-    #[cfg(test)]
-    pub(crate) fn get(&self, pol: Polarity) -> StateId {
+    pub fn get(&self, pol: Polarity) -> StateId {
         match pol {
             Polarity::Pos => self.pos,
             Polarity::Neg => self.neg,
