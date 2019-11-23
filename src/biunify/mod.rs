@@ -3,11 +3,11 @@ mod reference;
 #[cfg(test)]
 mod tests;
 
+use std::convert::Infallible;
 use std::iter::once;
 
 use crate::auto::{Automaton, StateId};
 use crate::{Constructor, Label, Polarity};
-use itertools::{merge_join_by, EitherOrBoth};
 
 pub type Result<C> = std::result::Result<(), Error<C>>;
 
@@ -65,18 +65,14 @@ impl<C: Constructor> Automaton<C> {
         let cps = self[qp].cons.clone();
         let cns = self[qn].cons.clone();
         for (cp, cn) in cps.intersection(cns) {
-            stack.extend(
-                merge_join_by(cp.params(), cn.params(), |l, r| Ord::cmp(&l.0, &r.0))
-                    .flat_map(|eob| match eob {
-                        EitherOrBoth::Both(lc, rc) => Some((lc.0, lc.1, rc.1)),
-                        _ => None,
-                    })
-                    .flat_map(|(label, l, r)| {
-                        let (ps, ns) = label.polarity().flip(l, r);
-                        product(ps, ns)
-                    })
-                    .filter(|&constraint| self.biunify_cache.insert(constraint)),
-            )
+            cp.visit_params_intersection::<_, Infallible>(&cn, |label, l, r| {
+                let (ps, ns) = label.polarity().flip(l, r);
+                stack.extend(
+                    product(ps, ns).filter(|&constraint| self.biunify_cache.insert(constraint)),
+                );
+                Ok(())
+            })
+            .unwrap();
         }
         Ok(())
     }
@@ -85,9 +81,9 @@ impl<C: Constructor> Automaton<C> {
 fn product<I, J>(lhs: I, rhs: J) -> impl Iterator<Item = (I::Item, J::Item)>
 where
     I: IntoIterator,
-    I::Item: Clone,
+    I::Item: Clone + Copy,
     J: IntoIterator,
-    J: Clone,
+    J: Clone + Copy,
 {
     lhs.into_iter()
         .flat_map(move |l| rhs.clone().into_iter().map(move |r| (l.clone(), r)))

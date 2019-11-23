@@ -102,8 +102,6 @@ impl<C: Constructor> Automaton<C> {
 
         #[cfg(debug_assertions)]
         debug_assert!(self.check_flow());
-        #[cfg(debug_assertions)]
-        debug_assert!(self.is_reduced());
 
         range
     }

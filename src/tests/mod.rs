@@ -10,6 +10,7 @@ use std::rc::Rc;
 use std::vec;
 
 use im::OrdMap;
+use itertools::EitherOrBoth;
 
 use crate::auto::StateSet;
 use crate::Polarity;
@@ -24,7 +25,6 @@ pub enum Constructor {
 impl crate::Constructor for Constructor {
     type Label = Label;
     type Component = Discriminant<Self>;
-    type Params = vec::IntoIter<(Label, StateSet)>;
 
     fn component(&self) -> Self::Component {
         discriminant(self)
@@ -55,17 +55,16 @@ impl crate::Constructor for Constructor {
         }
     }
 
-    fn params(&self) -> Self::Params {
-        match self {
-            Constructor::Bool => vec![],
-            Constructor::Fun(d, r) => vec![(Label::Domain, d.clone()), (Label::Range, r.clone())],
-            Constructor::Record(fields) => fields
-                .clone()
-                .into_iter()
-                .map(|(label, set)| (Label::Label(label), set))
-                .collect(),
-        }
-        .into_iter()
+    /// Visit the insertsection
+    fn visit_params_intersection<F, E>(&self, other: &Self, mut visit: F) -> Result<(), E>
+    where
+        F: FnMut(Self::Label, &StateSet, &StateSet) -> Result<(), E>,
+    {
+        itertools::merge_join_by(self.params(), other.params(), |l, r| Ord::cmp(&l.0, &r.0))
+            .try_for_each(|eob| match eob {
+                EitherOrBoth::Both(l, r) => visit(l.0, &l.1, &r.1),
+                _ => Ok(()),
+            })
     }
 
     fn map<F>(self, mut mapper: F) -> Self
@@ -83,6 +82,20 @@ impl crate::Constructor for Constructor {
                     .map(|(label, set)| (label.clone(), mapper(Label::Label(label), set)))
                     .collect(),
             ),
+        }
+    }
+}
+
+impl Constructor {
+    fn params(&self) -> Vec<(Label, StateSet)> {
+        match self {
+            Constructor::Bool => vec![],
+            Constructor::Fun(d, r) => vec![(Label::Domain, d.clone()), (Label::Range, r.clone())],
+            Constructor::Record(fields) => fields
+                .clone()
+                .into_iter()
+                .map(|(label, set)| (Label::Label(label), set))
+                .collect(),
         }
     }
 }

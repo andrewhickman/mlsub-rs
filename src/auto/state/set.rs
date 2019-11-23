@@ -1,7 +1,7 @@
 use std::hash::BuildHasherDefault;
 use std::iter::{once, Once};
 
-use im::hashset::{ConsumingIter, HashSet};
+use im::hashset::{self, HashSet};
 use seahash::SeaHasher;
 
 use crate::auto::state::StateId;
@@ -16,9 +16,9 @@ enum StateSetData {
     Set(HashSet<StateId, BuildHasherDefault<SeaHasher>>),
 }
 
-pub enum StateSetIter {
+pub enum StateSetIter<'a> {
     Singleton(Once<StateId>),
-    Set(ConsumingIter<StateId>),
+    Set(hashset::Iter<'a, StateId>),
 }
 
 impl StateSet {
@@ -45,7 +45,7 @@ impl StateSet {
     pub fn iter(&self) -> StateSetIter {
         match &self.0 {
             StateSetData::Singleton(id) => StateSetIter::Singleton(once(*id)),
-            StateSetData::Set(set) => StateSetIter::Set(set.clone().into_iter()),
+            StateSetData::Set(set) => StateSetIter::Set(set.iter()),
         }
     }
 
@@ -69,21 +69,13 @@ impl StateSet {
         }
     }
 
-    #[cfg(debug_assertions)]
-    pub(crate) fn is_reduced(&self) -> bool {
-        match &self.0 {
-            StateSetData::Singleton(_) => true,
-            StateSetData::Set(set) => set.len() == 1,
-        }
-    }
-
     pub(crate) fn unwrap_reduced(&self) -> StateId {
         self.iter().next().unwrap()
     }
 }
 
-impl IntoIterator for StateSet {
-    type IntoIter = StateSetIter;
+impl<'a> IntoIterator for &'a StateSet {
+    type IntoIter = StateSetIter<'a>;
     type Item = StateId;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -91,13 +83,13 @@ impl IntoIterator for StateSet {
     }
 }
 
-impl Iterator for StateSetIter {
+impl<'a> Iterator for StateSetIter<'a> {
     type Item = StateId;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             StateSetIter::Singleton(iter) => iter.next(),
-            StateSetIter::Set(iter) => iter.next(),
+            StateSetIter::Set(iter) => iter.next().copied(),
         }
     }
 }

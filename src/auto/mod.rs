@@ -45,11 +45,6 @@ impl<C: Constructor> Automaton<C> {
         range.shift(offset)
     }
 
-    #[cfg(debug_assertions)]
-    pub(crate) fn is_reduced(&self) -> bool {
-        self.states.iter().all(|st| st.cons.is_reduced())
-    }
-
     pub(crate) fn merge(&mut self, pol: Polarity, target_id: StateId, source_id: StateId) {
         if target_id != source_id {
             let (target, source) = self.index_mut2(target_id, source_id);

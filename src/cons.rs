@@ -13,14 +13,14 @@ use crate::Polarity;
 pub trait Constructor: Clone + PartialOrd {
     type Component: Eq + Hash + Clone;
     type Label: Label;
-    type Params: Iterator<Item = (Self::Label, StateSet)>;
 
     fn component(&self) -> Self::Component;
     fn join(&mut self, other: &Self, pol: Polarity);
 
-    /// Return the type parameters of this constructor, sorted according to the `Ord` impl of
-    /// their label.
-    fn params(&self) -> Self::Params;
+    /// Visit the common type parameters of two constructors.
+    fn visit_params_intersection<F, E>(&self, other: &Self, visit: F) -> Result<(), E>
+    where
+        F: FnMut(Self::Label, &StateSet, &StateSet) -> Result<(), E>;
 
     fn map<F>(self, mapper: F) -> Self
     where
@@ -70,12 +70,6 @@ impl<C: Constructor> ConstructorSet<C> {
         for con in other {
             self.add(pol, Cow::Borrowed(con));
         }
-    }
-
-    #[cfg(debug_assertions)]
-    pub(crate) fn is_reduced(&self) -> bool {
-        self.into_iter()
-            .all(|con| con.params().all(|(_, ids)| ids.is_reduced()))
     }
 
     pub(crate) fn get(&self, cpt: C::Component) -> Option<&C> {
