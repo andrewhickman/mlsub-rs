@@ -65,7 +65,6 @@ impl crate::Constructor for Constructor {
         }
     }
 
-    /// Visit the insertsection
     fn visit_params_intersection<F, E>(&self, other: &Self, mut visit: F) -> Result<(), E>
     where
         F: FnMut(Self::Label, &StateSet, &StateSet) -> Result<(), E>,
