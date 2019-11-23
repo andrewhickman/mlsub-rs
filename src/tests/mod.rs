@@ -5,7 +5,6 @@ pub use self::arbitrary::{arb_auto_ty, arb_polar_ty};
 pub use self::build::Constructed;
 
 use std::cmp::Ordering;
-use std::mem::{discriminant, Discriminant};
 use std::rc::Rc;
 use std::vec;
 
@@ -22,12 +21,23 @@ pub enum Constructor {
     Record(OrdMap<Rc<str>, StateSet>),
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub enum Component {
+    Bool,
+    Fun,
+    Record,
+}
+
 impl crate::Constructor for Constructor {
     type Label = Label;
-    type Component = Discriminant<Self>;
+    type Component = Component;
 
     fn component(&self) -> Self::Component {
-        discriminant(self)
+        match self {
+            Constructor::Bool => Component::Bool,
+            Constructor::Fun(..) => Component::Fun,
+            Constructor::Record(..) => Component::Record,
+        }
     }
 
     fn join(&mut self, other: &Self, pol: Polarity) {

@@ -60,7 +60,7 @@ impl<C: Constructor> Automaton<C> {
             let nfa_cons = replace(&mut self[a].cons, ConstructorSet::default());
 
             let mut dfa_cons = ConstructorSet::default();
-            for nfa_con in &nfa_cons {
+            for nfa_con in nfa_cons.iter() {
                 let dfa_con = nfa_con.clone().map(|label, set| {
                     let mut ids: Vec<_> = set.iter().collect();
                     ids.sort();

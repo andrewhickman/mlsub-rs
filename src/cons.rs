@@ -1,17 +1,14 @@
 use std::borrow::Cow;
-use std::hash::{BuildHasherDefault, Hash};
-use std::iter::Flatten;
-use std::{fmt, option};
+use std::fmt::{self, Debug};
 
-use im::hashmap::{Entry, HashMap, Values};
-use lazy_static::lazy_static;
-use seahash::SeaHasher;
+use itertools::{merge_join_by, EitherOrBoth};
+use small_ord_set::{self, KeyValuePair, SmallOrdSet};
 
 use crate::auto::StateSet;
 use crate::Polarity;
 
 pub trait Constructor: Clone + PartialOrd {
-    type Component: Eq + Hash + Clone;
+    type Component: Ord + Clone;
     type Label: Label;
 
     fn component(&self) -> Self::Component;
@@ -33,92 +30,66 @@ pub trait Label: Clone + Ord {
 
 #[derive(Clone)]
 pub struct ConstructorSet<C: Constructor> {
-    set: Option<HashMap<C::Component, C, BuildHasherDefault<SeaHasher>>>,
+    set: SmallOrdSet<[KeyValuePair<C::Component, C>; 1]>,
 }
 
-pub struct Iter<'a, C: Constructor>(Flatten<option::IntoIter<Values<'a, C::Component, C>>>);
-
 impl<C: Constructor> ConstructorSet<C> {
-    pub fn iter(&self) -> Iter<'_, C> {
-        Iter(self.set.as_ref().map(HashMap::values).into_iter().flatten())
+    pub fn iter(&self) -> impl Iterator<Item = &C> + Clone {
+        self.set.values()
     }
 
     pub(crate) fn add(&mut self, pol: Polarity, con: Cow<C>) {
-        match self.set().entry(con.component()) {
-            Entry::Occupied(mut entry) => entry.get_mut().join(&con, pol),
-            Entry::Vacant(entry) => {
+        match self.set.entry(con.component()) {
+            small_ord_set::Entry::Occupied(mut entry) => entry.get_mut().join(&con, pol),
+            small_ord_set::Entry::Vacant(entry) => {
                 entry.insert(con.into_owned());
             }
         }
     }
 
-    pub(crate) fn intersection(self, other: Self) -> impl Iterator<Item = (C, C)> {
-        // TODO horrible
-        match (self.set, other.set) {
-            (Some(lhs), Some(rhs)) => Some(
-                lhs.intersection_with(rhs, |l, r| (l, r))
-                    .into_iter()
-                    .map(|(_, v)| v),
-            ),
+    pub(crate) fn intersection<'a>(
+        &'a self,
+        other: &'a Self,
+    ) -> impl Iterator<Item = (&'a C, &'a C)> {
+        merge_join_by(&self.set, &other.set, Ord::cmp).filter_map(|eob| match eob {
+            EitherOrBoth::Both(l, r) => Some((&l.value, &r.value)),
             _ => None,
-        }
-        .into_iter()
-        .flatten()
+        })
     }
 
     pub(crate) fn merge(&mut self, other: &Self, pol: Polarity) {
-        for con in other {
+        for con in other.iter() {
             self.add(pol, Cow::Borrowed(con));
         }
     }
 
     pub(crate) fn get(&self, cpt: C::Component) -> Option<&C> {
-        self.set.as_ref().and_then(|set| set.get(&cpt))
+        self.set.get_value(&cpt)
     }
 
     pub(crate) fn shift(self, offset: usize) -> Self {
-        let set = self.set.map(|set| {
-            set.into_iter()
-                .map(|(component, con)| (component, con.map(|_, set| set.shift(offset))))
-                .collect()
-        });
+        let set = self
+            .set
+            .into_iter()
+            .map(|kvp| KeyValuePair {
+                key: kvp.key,
+                value: kvp.value.map(|_, set| set.shift(offset)),
+            })
+            .collect();
         ConstructorSet { set }
-    }
-
-    fn set(&mut self) -> &mut HashMap<C::Component, C, BuildHasherDefault<SeaHasher>> {
-        lazy_static! {
-            static ref HASHER: HashMap<(), (), BuildHasherDefault<SeaHasher>> = HashMap::default();
-        }
-
-        self.set.get_or_insert_with(|| HASHER.new_from())
     }
 }
 
-impl<C: fmt::Debug + Constructor> fmt::Debug for ConstructorSet<C> {
+impl<C: Debug + Constructor> Debug for ConstructorSet<C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_set().entries(self).finish()
+        f.debug_set().entries(self.iter()).finish()
     }
 }
 
 impl<C: Constructor> Default for ConstructorSet<C> {
     fn default() -> Self {
-        ConstructorSet { set: None }
-    }
-}
-
-impl<'a, C: Constructor> Iterator for Iter<'a, C> {
-    type Item = &'a C;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
-    }
-}
-
-impl<'a, C: Constructor> IntoIterator for &'a ConstructorSet<C> {
-    type Item = &'a C;
-    type IntoIter = Iter<'a, C>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.iter()
+        ConstructorSet {
+            set: SmallOrdSet::default(),
+        }
     }
 }

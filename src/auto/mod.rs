@@ -18,7 +18,7 @@ use crate::{Constructor, ConstructorSet, Polarity};
 
 #[derive(Debug)]
 pub struct Automaton<C: Constructor> {
-    states: Vec<State<C>>,
+    pub(crate) states: Vec<State<C>>,
     pub(crate) biunify_cache: HashSet<(StateId, StateId), BuildHasherDefault<SeaHasher>>,
 }
 

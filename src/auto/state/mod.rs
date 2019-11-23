@@ -16,7 +16,7 @@ pub struct State<C: Constructor> {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
-pub struct StateId(usize);
+pub struct StateId(pub(crate) usize);
 
 #[derive(Debug, Clone)]
 pub struct StateRange(Range<usize>);

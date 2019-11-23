@@ -51,7 +51,7 @@ impl<C: Constructor> Automaton<C> {
         debug_assert_eq!(self[qn].pol, Polarity::Neg);
         debug_assert!(self.biunify_cache.contains(&(qp, qn)));
 
-        for (cp, cn) in product(&self[qp].cons, &self[qn].cons) {
+        for (cp, cn) in product(self[qp].cons.iter(), self[qn].cons.iter()) {
             if !(cp <= cn) {
                 return Err(Error::new(cp.clone(), cn.clone()));
             }
@@ -62,14 +62,16 @@ impl<C: Constructor> Automaton<C> {
         for from in self[qp].flow.iter() {
             self.merge(Polarity::Neg, from, qn);
         }
-        let cps = self[qp].cons.clone();
-        let cns = self[qn].cons.clone();
+
+        let states = &self.states;
+        let biunify_cache = &mut self.biunify_cache;
+        let cps = &states[qp.0].cons;
+        let cns = &states[qn.0].cons;
         for (cp, cn) in cps.intersection(cns) {
             cp.visit_params_intersection::<_, Infallible>(&cn, |label, l, r| {
                 let (ps, ns) = label.polarity().flip(l, r);
-                stack.extend(
-                    product(ps, ns).filter(|&constraint| self.biunify_cache.insert(constraint)),
-                );
+                stack
+                    .extend(product(ps, ns).filter(|&constraint| biunify_cache.insert(constraint)));
                 Ok(())
             })
             .unwrap();
@@ -83,7 +85,7 @@ where
     I: IntoIterator,
     I::Item: Clone + Copy,
     J: IntoIterator,
-    J: Clone + Copy,
+    J: Clone,
 {
     lhs.into_iter()
         .flat_map(move |l| rhs.clone().into_iter().map(move |r| (l.clone(), r)))

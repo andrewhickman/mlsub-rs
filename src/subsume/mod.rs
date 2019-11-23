@@ -22,7 +22,7 @@ impl<C: Constructor> Automaton<C> {
         debug_assert_eq!(self[a].pol, self[b].pol);
 
         if seen.insert((a, b)) {
-            for lcon in &self[a].cons {
+            for lcon in self[a].cons.iter() {
                 let rcon = match self[b].cons.get(lcon.component()) {
                     Some(rcon) if lcon <= rcon => rcon,
                     _ => return Err(()),
