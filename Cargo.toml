@@ -14,10 +14,7 @@ im = "13"
 seahash = "3.0.5"
 itertools = "0.8.0"
 lazy_static = "1.2.0"
-
-[dependencies.small-ord-set]
-git = "https://github.com/andrewhickman/small-ord-set"
-rev = "3cbd25c658fa5570ac38460ca9f89f2b7b5d3818"
+small-ord-set = "0.1.0"
 
 [dev-dependencies]
 iter-set = "~1"
