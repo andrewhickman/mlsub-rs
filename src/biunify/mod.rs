@@ -65,8 +65,8 @@ impl<C: Constructor> Automaton<C> {
 
         let states = &self.states;
         let biunify_cache = &mut self.biunify_cache;
-        let cps = &states[qp.0].cons;
-        let cns = &states[qn.0].cons;
+        let cps = &states[qp.as_u32() as usize].cons;
+        let cns = &states[qn.as_u32() as usize].cons;
         for (cp, cn) in cps.intersection(cns) {
             cp.visit_params_intersection::<_, Infallible>(&cn, |label, l, r| {
                 let (ps, ns) = label.polarity().flip(l, r);

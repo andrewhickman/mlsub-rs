@@ -16,13 +16,17 @@ pub struct State<C: Constructor> {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
-pub struct StateId(pub(crate) usize);
+pub struct StateId(u32);
 
 #[derive(Debug, Clone)]
-pub struct StateRange(Range<usize>);
+pub struct StateRange(Range<u32>);
 
 impl StateId {
-    pub fn shift(self, offset: usize) -> Self {
+    pub fn as_u32(self) -> u32 {
+        self.0
+    }
+
+    pub fn shift(self, offset: u32) -> Self {
         StateId(self.0 + offset)
     }
 }
@@ -41,7 +45,11 @@ impl<C: Constructor> State<C> {
         &self.cons
     }
 
-    fn shift(self, offset: usize) -> Self {
+    pub fn flow(&self) -> &FlowSet {
+        &self.flow
+    }
+
+    fn shift(self, offset: u32) -> Self {
         State {
             #[cfg(debug_assertions)]
             pol: self.pol,
@@ -64,7 +72,7 @@ impl<C: Constructor> Clone for State<C> {
 
 impl<C: Constructor> Automaton<C> {
     pub(crate) fn next(&mut self) -> StateId {
-        StateId(self.states.len())
+        StateId(self.states.len() as u32)
     }
 
     pub(crate) fn add(&mut self, state: State<C>) -> StateId {
@@ -73,8 +81,8 @@ impl<C: Constructor> Automaton<C> {
         id
     }
 
-    pub fn add_from(&mut self, other: &Self) -> usize {
-        let offset = self.states.len();
+    pub fn add_from(&mut self, other: &Self) -> u32 {
+        let offset = self.states.len() as u32;
         self.states.extend(
             other
                 .states
@@ -92,23 +100,23 @@ impl<C: Constructor> Automaton<C> {
     ) -> (&mut State<C>, &mut State<C>) {
         debug_assert_ne!(i, j);
         if i < j {
-            let (l, r) = self.states.split_at_mut(j);
-            (&mut l[i], &mut r[0])
+            let (l, r) = self.states.split_at_mut(j as usize);
+            (&mut l[i as usize], &mut r[0])
         } else {
-            let (l, r) = self.states.split_at_mut(i);
-            (&mut r[0], &mut l[j])
+            let (l, r) = self.states.split_at_mut(i as usize);
+            (&mut r[0], &mut l[j as usize])
         }
     }
 
     pub(crate) fn range_from(&mut self, StateId(start): StateId) -> StateRange {
-        StateRange(start..self.states.len())
+        StateRange(start..(self.states.len() as u32))
     }
 
     pub(crate) fn enumerate(&self) -> impl Iterator<Item = (StateId, &State<C>)> {
         self.states
             .iter()
             .enumerate()
-            .map(|(id, st)| (StateId(id), st))
+            .map(|(id, st)| (StateId(id as u32), st))
     }
 }
 
@@ -116,18 +124,18 @@ impl<C: Constructor> Index<StateId> for Automaton<C> {
     type Output = State<C>;
 
     fn index(&self, StateId(id): StateId) -> &Self::Output {
-        self.states.index(id)
+        self.states.index(id as usize)
     }
 }
 
 impl<C: Constructor> IndexMut<StateId> for Automaton<C> {
     fn index_mut(&mut self, StateId(id): StateId) -> &mut Self::Output {
-        self.states.index_mut(id)
+        self.states.index_mut(id as usize)
     }
 }
 
 impl StateRange {
-    pub fn shift(self, offset: usize) -> Self {
+    pub fn shift(self, offset: u32) -> Self {
         StateRange((self.0.start + offset)..(self.0.end + offset))
     }
 }

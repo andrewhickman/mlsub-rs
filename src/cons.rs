@@ -67,7 +67,7 @@ impl<C: Constructor> ConstructorSet<C> {
         self.set.get_value(&cpt)
     }
 
-    pub(crate) fn shift(self, offset: usize) -> Self {
+    pub(crate) fn shift(self, offset: u32) -> Self {
         let set = self
             .set
             .into_iter()

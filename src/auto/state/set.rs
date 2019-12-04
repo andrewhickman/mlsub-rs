@@ -49,7 +49,7 @@ impl StateSet {
         }
     }
 
-    pub(crate) fn shift(self, offset: usize) -> Self {
+    pub(crate) fn shift(self, offset: u32) -> Self {
         let data = match self.0 {
             StateSetData::Singleton(id) => StateSetData::Singleton(id.shift(offset)),
             StateSetData::Set(set) => {

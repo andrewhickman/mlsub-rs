@@ -15,7 +15,7 @@ pub struct Pair {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct FlowSet {
+pub struct FlowSet {
     set: HashSet<StateId, BuildHasherDefault<SeaHasher>>,
 }
 
@@ -34,7 +34,7 @@ impl Pair {
 }
 
 impl FlowSet {
-    pub(crate) fn iter(&self) -> hashset::ConsumingIter<StateId> {
+    pub fn iter(&self) -> hashset::ConsumingIter<StateId> {
         self.set.clone().into_iter()
     }
 
@@ -47,7 +47,7 @@ impl FlowSet {
         }
     }
 
-    pub(crate) fn shift(self, offset: usize) -> Self {
+    pub(crate) fn shift(self, offset: u32) -> Self {
         FlowSet::from_iter(self.set.into_iter().map(|id| id.shift(offset)))
     }
 
