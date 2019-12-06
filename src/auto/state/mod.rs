@@ -1,6 +1,6 @@
 mod set;
 
-pub use self::set::{StateSet, StateSetIter};
+pub use self::set::StateSet;
 
 use std::ops::{Index, IndexMut, Range};
 
