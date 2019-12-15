@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::mem::replace;
 
-use im::HashSet;
+use small_ord_set::SmallOrdSet;
 
 use crate::auto::{Automaton, ConstructorSet, FlowSet, State, StateId, StateRange, StateSet};
 use crate::{Constructor, Label, Polarity};
@@ -111,7 +111,7 @@ struct BiMap {
     // maps nfa state set to corresponding dfa state
     ns2d: HashMap<Vec<StateId>, StateId>,
     // maps nfa state to set of dfa states containing it
-    n2ds: HashMap<StateId, HashSet<StateId>>,
+    n2ds: HashMap<StateId, SmallOrdSet<[StateId; 4]>>,
 }
 
 impl BiMap {
