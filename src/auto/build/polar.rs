@@ -14,32 +14,46 @@ pub trait Build<C: Constructor, V>: Sized {
         F: FnMut(C::Label, &'a polar::Ty<Self, V>) -> StateSet;
 }
 
-pub struct Builder<'a, C, V>
+pub(crate) trait BuildVar<V> {
+    fn build_var<C: Constructor>(&mut self, auto: &mut Automaton<C>, var: V) -> flow::Pair;
+}
+
+pub(crate) struct Builder<'a, C, W>
 where
     C: Constructor,
-    V: Eq + Hash + Clone,
 {
     auto: &'a mut Automaton<C>,
-    vars: HashMap<V, flow::Pair>,
+    vars: W,
 }
 
 impl<'a, C: Constructor> Automaton<C> {
-    pub fn builder<V: Eq + Hash + Clone>(&'a mut self) -> Builder<C, V> {
+    #[cfg(test)]
+    pub(crate) fn builder<V: Eq + Hash + Clone>(
+        &'a mut self,
+    ) -> Builder<C, HashMap<V, flow::Pair>> {
         Builder {
             auto: self,
             vars: HashMap::new(),
         }
     }
+
+    pub(crate) fn simple_builder(&'a mut self) -> Builder<C, ()> {
+        Builder {
+            auto: self,
+            vars: (),
+        }
+    }
 }
 
-impl<'a, C, V> Builder<'a, C, V>
+impl<'a, C, W> Builder<'a, C, W>
 where
     C: Constructor,
-    V: Eq + Hash + Clone,
 {
-    pub fn build_polar<B>(&mut self, pol: Polarity, ty: &polar::Ty<B, V>) -> StateId
+    pub fn build_polar<B, V>(&mut self, pol: Polarity, ty: &polar::Ty<B, V>) -> StateId
     where
         B: Build<C, V>,
+        V: Clone,
+        W: BuildVar<V>,
     {
         let at = self.auto.build_empty(pol);
         let mut stack = vec![(pol, at, ty, Vector::new())];
@@ -49,7 +63,7 @@ where
         at
     }
 
-    fn build_polar_closure_at<'b, B>(
+    fn build_polar_closure_at<'b, B, V>(
         &mut self,
         pol: Polarity,
         at: StateId,
@@ -58,6 +72,8 @@ where
         recs: &mut Vector<StateId>,
     ) where
         B: Build<C, V>,
+        V: Clone,
+        W: BuildVar<V>,
     {
         // TODO produce less garbage states
 
@@ -80,8 +96,7 @@ where
                 self.auto.build_add_at(pol, at, [l, r].iter().cloned());
             }
             polar::Ty::UnboundVar(var) => {
-                let Builder { vars, auto } = self;
-                let pair = vars.entry(var.clone()).or_insert_with(|| auto.build_var());
+                let pair = self.vars.build_var(self.auto, var.clone());
                 self.auto.merge_flow(pol, at, pair.get(pol));
             }
             polar::Ty::Zero => (),
@@ -100,7 +115,7 @@ where
         }
     }
 
-    fn build_polar_closure<'b, B>(
+    fn build_polar_closure<'b, B, V>(
         &mut self,
         pol: Polarity,
         epsilon: bool,
@@ -110,6 +125,8 @@ where
     ) -> StateId
     where
         B: Build<C, V>,
+        V: Clone,
+        W: BuildVar<V>,
     {
         if let polar::Ty::BoundVar(idx) = *ty {
             recs[idx]
@@ -122,5 +139,20 @@ where
             }
             id
         }
+    }
+}
+
+impl<V> BuildVar<V> for HashMap<V, flow::Pair>
+where
+    V: Eq + Hash + Clone,
+{
+    fn build_var<C: Constructor>(&mut self, auto: &mut Automaton<C>, var: V) -> flow::Pair {
+        self.entry(var).or_insert_with(|| auto.build_var()).clone()
+    }
+}
+
+impl BuildVar<flow::Pair> for () {
+    fn build_var<C: Constructor>(&mut self, _: &mut Automaton<C>, pair: flow::Pair) -> flow::Pair {
+        pair
     }
 }

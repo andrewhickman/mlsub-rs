@@ -1,10 +1,11 @@
-#[cfg(test)]
 pub(crate) mod polar;
+
+pub use self::polar::Build;
 
 use std::borrow::Cow;
 
 use crate::auto::{flow, Automaton, State, StateId};
-use crate::{Polarity, Constructor};
+use crate::{Constructor, Polarity};
 
 impl<'a, C: Constructor> Automaton<C> {
     /// Build an empty state, representing the bottom and top types for positive and negative
@@ -51,5 +52,16 @@ impl<'a, C: Constructor> Automaton<C> {
 
     fn build_constructed_at(&mut self, pol: Polarity, at: StateId, con: C) {
         self[at].cons.add(pol, Cow::Owned(con));
+    }
+
+    pub fn build_polar_simple<B>(
+        &mut self,
+        pol: Polarity,
+        ty: &crate::polar::Ty<B, flow::Pair>,
+    ) -> StateId
+    where
+        B: Build<C, flow::Pair>,
+    {
+        self.simple_builder().build_polar(pol, ty)
     }
 }

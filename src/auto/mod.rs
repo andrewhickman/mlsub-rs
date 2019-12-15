@@ -5,6 +5,7 @@ pub(crate) mod build;
 
 mod reduce;
 
+pub use self::build::Build;
 pub use self::state::{State, StateId, StateRange, StateSet};
 
 pub(crate) use self::flow::FlowSet;

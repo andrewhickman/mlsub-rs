@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use proptest::collection::vec;
-use proptest::{prop_assert_eq, proptest};
 use proptest::test_runner::Config;
+use proptest::{prop_assert_eq, proptest};
 
 use crate::auto::Automaton;
 use crate::biunify::reference::{self, arb_constraint};

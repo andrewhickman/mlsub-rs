@@ -5,10 +5,10 @@ use lazy_static::lazy_static;
 use proptest::collection::btree_map;
 use proptest::prelude::*;
 use proptest::prop_oneof;
+use proptest::proptest;
 use proptest::strategy::{LazyJust, NewTree, ValueTree};
 use proptest::string::string_regex;
 use proptest::test_runner::TestRunner;
-use proptest::proptest;
 use rand::distributions::Exp1;
 
 use super::{Constructed, Constructor};
