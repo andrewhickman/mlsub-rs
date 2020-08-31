@@ -10,24 +10,25 @@ pub use self::state::{State, StateId, StateRange, StateSet};
 
 pub(crate) use self::flow::FlowSet;
 
-use std::collections::HashSet;
+use std::collections::HashMap;
+use std::fmt::{self, Debug};
 use std::hash::BuildHasherDefault;
 
 use seahash::SeaHasher;
 
-use crate::{Constructor, ConstructorSet, Polarity};
+use crate::{biunify, Constructor, ConstructorSet, Polarity};
 
-#[derive(Debug)]
 pub struct Automaton<C: Constructor> {
     pub(crate) states: Vec<State<C>>,
-    pub(crate) biunify_cache: HashSet<(StateId, StateId), BuildHasherDefault<SeaHasher>>,
+    pub(crate) biunify_cache:
+        HashMap<(StateId, StateId), biunify::CacheEntry<C>, BuildHasherDefault<SeaHasher>>,
 }
 
 impl<C: Constructor> Automaton<C> {
     pub fn new() -> Self {
         Automaton {
             states: Vec::new(),
-            biunify_cache: HashSet::default(),
+            biunify_cache: HashMap::default(),
         }
     }
 
@@ -64,5 +65,18 @@ impl<C: Constructor> Automaton<C> {
 impl<C: Constructor> Default for Automaton<C> {
     fn default() -> Self {
         Automaton::new()
+    }
+}
+
+impl<C> fmt::Debug for Automaton<C>
+where
+    C: Constructor + Debug,
+    C::Label: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Automaton")
+            .field("states", &self.states)
+            .field("biunify_cache", &self.biunify_cache)
+            .finish()
     }
 }

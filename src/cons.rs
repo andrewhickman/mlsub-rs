@@ -24,7 +24,7 @@ pub trait Constructor: Clone + PartialOrd {
         F: FnMut(Self::Label, StateSet) -> StateSet;
 }
 
-pub trait Label {
+pub trait Label: Clone {
     fn polarity(&self) -> Polarity;
 }
 

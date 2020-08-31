@@ -81,7 +81,7 @@ impl<C: Constructor> Automaton<C> {
             }
 
             // Replace with dfa ids
-            replace(&mut self[a].cons, dfa_cons);
+            self[a].cons = dfa_cons;
         }
 
         // Populate flow
@@ -97,7 +97,7 @@ impl<C: Constructor> Automaton<C> {
             );
 
             // Replace with dfa ids
-            replace(&mut self[a].flow, dfa_flow);
+            self[a].flow = dfa_flow;
         }
 
         #[cfg(debug_assertions)]
