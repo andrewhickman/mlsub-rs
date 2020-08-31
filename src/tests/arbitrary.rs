@@ -9,7 +9,7 @@ use proptest::proptest;
 use proptest::strategy::{LazyJust, NewTree, ValueTree};
 use proptest::string::string_regex;
 use proptest::test_runner::TestRunner;
-use rand::distributions::Exp1;
+use rand_distr::Exp1;
 
 use super::{Constructed, Constructor};
 use crate::auto::{Automaton, StateId};
