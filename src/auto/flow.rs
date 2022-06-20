@@ -2,8 +2,8 @@ use std::hash::BuildHasherDefault;
 use std::iter::FromIterator;
 
 use im::{hashset, HashSet};
-use seahash::SeaHasher;
 use once_cell::sync::Lazy;
+use seahash::SeaHasher;
 
 use crate::auto::{Automaton, StateId};
 use crate::{Constructor, Polarity};
@@ -59,7 +59,7 @@ impl FlowSet {
 impl Default for FlowSet {
     fn default() -> Self {
         static EMPTY: Lazy<FlowSet> = Lazy::new(|| FlowSet {
-            set: HashSet::default()
+            set: HashSet::default(),
         });
 
         EMPTY.clone()
