@@ -1,3 +1,9 @@
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Build
 /target
 **/*.rs.bk
 Cargo.lock
